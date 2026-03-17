@@ -1253,14 +1253,13 @@ function renderAgentChip() {
     $('agentDisplayName').textContent  = loggedInAgent.name
     $('agentDisplayEmail').textContent = loggedInAgent.email
     // Show gear icon only for admins
-    $('adminGearBtn').style.display = loggedInAgent.role === 'admin' ? 'inline' : 'none'
+    $('adminGearBtn').style.display = logedInAgent.role === 'admin' ? 'inline' : 'none'
   } else {
     $('headerLoginBtn').style.display  = 'flex'
     $('headerAgentChip').style.display = 'none'
   }
 }
-
-as function logout() {
+async function logout() {
   await sb.auth.signOut()
   loggedInAgent = null
   $('fAgent').value = ''
