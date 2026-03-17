@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CSAT Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #f0f2f6;
+      --card:        #ffffff;
+      --primary:     #4f46e5;
+      --primary-lt:  #eef2ff;
+      --good:        #16a34a;
+      --good-bg:     #dcfce7;
+      --bad:         #dc2626;
+      --bad-bg:      #fee2e2;
+      --warn:        #d97706;
+      --warn-bg:     #fef3c7;
+      --text:        #0f172a;
+      --muted:       #64748b;
+      --border:      #e2e8f0;
+      --radius:      14px;
+      --shadow:      0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ââ HEADER ââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+    .header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 200;
+      box-shadow: var(--shadow);
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .hicon {
+      width: 34px; height: 34px;
+      background: var(--primary); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; font-size: 17px;
+    }
+    .htitle { font-size: 16px; font-weight: 700; }
+    .htitle small { font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 8px; }
+    .live-badge {
+      background: #dcfce7; color: #15803d;
+      font-size: 11px; font-weight: 600;
+      padding: 3px 9px; border-radius: 99px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .live-dot { width:6px; height:6px; border-radius:50%; background:#16a34a; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .header-meta { font-size: 12px; color: var(--muted); }
+
+    /* ââ PAGE ââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+    .page { max-width: 1440px; margin: 0 auto; padding: 24px 32px 48px; }
+
+    /* ââ FILTER BAR ââââââââââââââââââââââââââââââââââââââââââââââââ */
+    .filter-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 20px;
+      display: flex; align-items: flex-end; flex-wrap: wrap; gap: 14px;
+      margin-bottom: 22px; box-shadow: var(--shadow);
+    }
+    .fg { display: flex; flex-direction: column; gap: 4px; }
+    .fg label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing:.06em; }
+    .fg input, .fg select {
+      border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 7px 11px; font-size: 13px; color: var(--text);
+      background: #fafafa; min-width: 140px; transition: border-color .15s;
+    }
+    .fg input:focus, .fg select:focus { outline: none; border-color: var(--primary); background: #fff; }
+    .filter-sep { width: 1px; height: 36px; background: var(--border); align-self: flex-end; }
+    .btn-primary {
+      background: var(--primary); color: #fff;
+      border: none; border-radius: 8px; padding: 8px 18px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .btn-primary:hover { opacity: .88; }
+    .btn-ghost {
+      background: none; color: var(--muted);
+      border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 7px 14px; font-size: 13px; cursor: pointer;
+    }
+    .btn-ghost:hover { border-color: #94a3b8; color: var(--text); }
+
+    /* ââ KPI CARDS âââââââââââââââââââââââââââââââââââââââââââââââââ */
+    .kpi-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 22px; }
+    .kpi-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px 22px;
+      box-shadow: var(--shadow); position: relative; overflow: hidden;
+    }
+    .kpi-card::before {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 4px; height: 100%; border-radius: 4px 0 0 4px;
+    }
+    .kpi-card.c-csat::before  { background: var(--primary); }
+    .kpi-card.c-total::before { background: #0ea5e9; }
+    .kpi-card.c-good::before  { background: var(--good); }
+    .kpi-card.c-bad::before   { background: var(--bad); }
+    .kpi-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing:.06em; margin-bottom: 8px; }
+    .kpi-value { font-size: 36px; font-weight: 800; line-height: 1; letter-spacing: -.02em; }
+    .kpi-card.c-csat  .kpi-value { color: var(--primary); }
+    .kpi-card.c-total .kpi-value { color: #0369a1; }
+    .kpi-card.c-good  .kpi-value { color: var(--good); }
+    .kpi-card.c-bad   .kpi-value { color: var(--bad); }
+    .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 5px; }
+    .kpi-csat-high .kpi-value { color: var(--good) !important; }
+    .kpi-csat-high::before    { background: var(--good) !important; }
+    .kpi-csat-mid  .kpi-value { color: var(--warn) !important; }
+    .kpi-csat-mid::before     { background: var(--warn) !important; }
+    .kpi-csat-low  .kpi-value { color: var(--bad)  !important; }
+    .kpi-csat-low::before     { background: var(--bad)  !important; }
+
+    /* ââ CHARTS ââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+    .charts-grid {
+      display: grid; grid-template-columns: 2fr 1fr 1fr;
+      gap: 16px; margin-bottom: 22px;
+    }
+    .chart-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+      box-shadow: var(--shadow);
+    }
+    .chart-head { font-size: 13px; font-weight: 700; margin-bottom: 16px; display:flex; align-items:center; justify-content:space-between; }
+    .chart-head small { font-size: 11px; font-weight: 500; color: var(--muted); }
+
+    /* ââ TABLE SECTION âââââââââââââââââââââââââââââââââââââââââââââ */
+    .section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .section-title { font-size: 15px; font-weight: 700; }
+    .badge-count {
+      background: var(--bad-bg); color: var(--bad);
+      font-size: 12px; font-weight: 700;
+      padding: 2px 9px; border-radius: 99px;
+    }
+    .table-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: #f8fafc; }
+    th {
+      padding: 11px 14px; text-align: left;
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .06em;
+      border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #fafbff; }
+
+    a.tid {
+      font-family: 'SF Mono','Consolas',monospace;
+      color: var(--primary); font-size: 12px; font-weight: 600;
+      background: var(--primary-lt); padding: 2px 7px; border-radius: 5px;
+      text-decoration: none; display: inline-flex; align-items: center; gap: 3px;
+    }
+    a.tid:hover { background: var(--primary); color: #fff; }
+    span.tid {
+      font-family: 'SF Mono','Consolas',monospace;
+      color: var(--primary); font-size: 12px; font-weight: 600;
+      background: var(--primary-lt); padding: 2px 7px; border-radius: 5px;
+    }
+    .pill { display: inline-flex; padding: 2px 9px; border-radius: 99px; font-size: 12px; font-weight: 500; }
+    .pill-brand { background: #ede9fe; color: #6d28d9; }
+    .pill-type  { background: #e0f2fe; color: #075985; }
+    .pill-group { background: #fef9c3; color: #854d0e; }
+    .pill-agent { background: #f0fdf4; color: #166534; }
+    .comment-cell { max-width: 280px; color: var(--muted); font-style: italic; font-size: 12px; line-height: 1.5; }
+    .no-comment { color: #cbd5e1; font-style: normal; }
+    .date-cell { white-space: nowrap; color: var(--muted); font-size: 12px; }
+
+    /* Analyze button */
+    .btn-analyze {
+      background: var(--primary-lt); color: var(--primary);
+      border: 1.5px solid #c7d2fe; border-radius: 6px;
+      padding: 4px 10px; font-size: 12px; font-weight: 600;
+      cursor: pointer; white-space: nowrap; transition: all .15s;
+    }
+    .btn-analyze:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-analyze:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-analyze.loading { opacity: .7; cursor: wait; }
+    .btn-analyze.has-rca { background: #ede9fe; color: #6d28d9; border-color: #c4b5fd; }
+    .btn-analyze.has-rca:hover { background: #6d28d9; color: #fff; border-color: #6d28d9; }
+
+    /* ââ MODAL âââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.55);
+      z-index: 900; display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal-box {
+      background: white; border-radius: 16px;
+      width: 100%; max-width: 720px; max-height: 88vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 60px rgba(0,0,0,.28);
+      animation: mIn .2s ease;
+    }
+    @keyframes mIn { from{opacity:0;transform:scale(.95) translateY(10px)} to{opacity:1;transform:scale(1) translateY(0)} }
+    .modal-head {
+      padding: 20px 24px 16px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: flex-start;
+      position: sticky; top: 0; background: white; z-index: 1;
+      border-radius: 16px 16px 0 0;
+    }
+    .modal-title { font-size: 16px; font-weight: 700; color: var(--text); }
+    .modal-sub   { font-size: 13px; color: var(--muted); margin-top: 3px; max-width: 500px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .modal-fd-link {
+      font-size: 12px; color: var(--primary); text-decoration: none;
+      display: inline-flex; align-items: center; gap: 3px; margin-top: 5px;
+    }
+    .modal-fd-link:hover { text-decoration: underline; }
+    .modal-close {
+      border: none; background: none; cursor: pointer;
+      font-size: 20px; color: var(--muted); padding: 2px 5px;
+      border-radius: 6px; flex-shrink: 0; line-height: 1;
+    }
+    .modal-close:hover { background: #f1f5f9; }
+    .modal-body { padding: 20px 24px 24px; }
+
+    /* RCA sections */
+    .rca-section { background: #f8fafc; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+    .rca-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing:.06em; color: var(--muted); margin-bottom: 8px; }
+    .rca-text { font-size: 14px; line-height: 1.65; color: var(--text); }
+    .rca-list { list-style: none; padding: 0; margin: 0; }
+    .rca-list li { font-size: 14px; line-height: 1.6; color: var(--text); padding: 4px 0 4px 20px; position: relative; }
+    .rca-list li::before { content: 'â'; position: absolute; left: 3px; color: var(--muted); font-size: 12px; }
+    .rca-section.bad-s  { background: #fff5f5; }
+    .rca-section.bad-s  .rca-label { color: var(--bad); }
+    .rca-section.bad-s  .rca-list li::before { content: 'â¢'; color: var(--bad); }
+    .rca-section.good-s { background: #f0fdf4; }
+    .rca-section.good-s .rca-label { color: var(--good); }
+    .rca-section.good-s .rca-list li::before { content: 'â'; color: var(--good); }
+    .sev-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+    .sev-high   { background: var(--bad-bg);  color: var(--bad);  }
+    .sev-medium { background: var(--warn-bg); color: var(--warn); }
+    .sev-low    { background: var(--good-bg); color: var(--good); }
+    .csat-comment-box {
+      background: #f8fafc; border-left: 3px solid var(--warn);
+      border-radius: 0 8px 8px 0; padding: 10px 14px; margin-bottom: 16px;
+      font-size: 13px; color: var(--text); font-style: italic; line-height: 1.5;
+    }
+    .csat-comment-label { font-style: normal; font-size: 11px; font-weight: 700; color: var(--warn); text-transform: uppercase; letter-spacing:.05em; margin-bottom: 4px; }
+    .no-anthropic-warn {
+      background: var(--warn-bg); border-radius: 8px; padding: 12px 16px;
+      font-size: 13px; color: var(--warn); margin-bottom: 16px;
+    }
+    .rca-section.comment-analysis { background: #fefce8; }
+    .rca-section.comment-analysis .rca-label { color: #854d0e; }
+    .rca-section.agent-summary { background: #f0f9ff; }
+    .rca-section.agent-summary .rca-label { color: #0369a1; }
+    .rca-footer {
+      margin-top: 16px; padding: 10px 14px;
+      background: #f8fafc; border-radius: 8px;
+      font-size: 12px; color: var(--muted);
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+    }
+    .btn-reanalyze {
+      background: none; border: 1.5px solid var(--border); border-radius: 7px;
+      padding: 5px 12px; font-size: 12px; cursor: pointer; color: var(--muted);
+      transition: all .15s;
+    }
+    .btn-reanalyze:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* ââ STATES ââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+    .state-box { display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; padding:60px 20px; color:var(--muted); font-size:13px; }
+    .spinner { width:24px; height:24px; border:2.5px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin .7s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    /* ââ AGENT LOGIN âââââââââââââââââââââââââââââââââââââââââââââââ */
+    .btn-login {
+      background: none; border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--muted);
+      display: flex; align-items: center; gap: 6px; transition: all .15s;
+    }
+    .btn-login:hover { border-color: var(--primary); color: var(--primary); }
+    .agent-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--primary-lt); border: 1.5px solid #c7d2fe;
+      border-radius: 99px; padding: 4px 12px 4px 6px; cursor: default;
+    }
+    .agent-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--primary); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+    .agent-name  { font-size: 13px; font-weight: 600; color: var(--text); }
+    .agent-email { font-size: 11px; color: var(--muted); }
+    .btn-logout {
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 18px; line-height: 1; padding: 0 2px;
+      margin-left: 2px;
+    }
+    .btn-logout:hover { color: var(--bad); }
+
+    /* Login modal */
+    .login-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.55);
+      z-index: 1000; display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .login-box {
+      background: white; border-radius: 16px; width: 100%; max-width: 420px;
+      box-shadow: 0 25px 60px rgba(0,0,0,.28); animation: mIn .2s ease; overflow: hidden;
+    }
+    .login-head {
+      background: var(--primary); padding: 28px 28px 24px;
+      color: white; text-align: center;
+    }
+    .login-head-icon { font-size: 32px; margin-bottom: 8px; }
+    .login-head-title { font-size: 18px; font-weight: 700; }
+    .login-head-sub { font-size: 13px; opacity: .8; margin-top: 4px; }
+    .login-form { padding: 24px 28px 28px; }
+    .lf-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing:.06em; display: block; margin-bottom: 6px; }
+    .lf-input {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 10px 13px; font-size: 14px; color: var(--text);
+      transition: border-color .15s; margin-bottom: 16px;
+    }
+    .lf-input:focus { outline: none; border-color: var(--primary); }
+    .login-error {
+      background: var(--bad-bg); color: var(--bad); border-radius: 8px;
+      padding: 10px 14px; font-size: 13px; margin-bottom: 14px; display: none;
+    }
+    .btn-login-submit {
+      width: 100%; background: var(--primary); color: white;
+      border: none; border-radius: 8px; padding: 11px; font-size: 14px;
+      font-weight: 600; cursor: pointer; transition: opacity .15s;
+    }
+    .btn-login-submit:hover { opacity: .88; }
+    .btn-login-submit:disabled { opacity: .55; cursor: not-allowed; }
+    .login-note { font-size: 12px; color: var(--muted); text-align: center; margin-top: 14px; line-height: 1.5; }
+    .login-cancel { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 13px; text-decoration: underline; margin-top: 8px; display: block; width: 100%; text-align: center; }
+    .login-cancel:hover { color: var(--text); }
+
+    /* Lock hint in table */
+    .analyze-lock { font-size: 12px; color: #cbd5e1; white-space: nowrap; }
+
+    /* Admin gear button */
+    .btn-admin-gear {
+      background: none; border: none; cursor: pointer;
+      font-size: 16px; line-height: 1; padding: 0 2px 4px;
+      opacity: .7; transition: opacity .15s;
+    }
+    .btn-admin-gear:hover { opacity: 1; }
+
+    /* Setup / Admin panel modals (reuse login-box styles) */
+    .setup-box {
+      background: white; border-radius: 16px; width: 100%; max-width: 460px;
+      box-shadow: 0 25px 60px rgba(0,0,0,.28); animation: mIn .2s ease; overflow: hidden;
+    }
+    .admin-box {
+      background: white; border-radius: 16px; width: 100%; max-width: 560px;
+      box-shadow: 0 25px 60px rgba(0,0,0,.28); animation: mIn .2s ease; overflow: hidden;
+      max-height: 88vh; overflow-y: auto;
+    }
+    .admin-head { background: var(--primary); padding: 22px 24px 18px; color: white; }
+    .admin-head-title { font-size: 17px; font-weight: 700; }
+    .admin-head-sub   { font-size: 13px; opacity: .8; margin-top: 3px; }
+    .admin-body { padding: 22px 24px 26px; }
+    .admin-section-title { font-size: 13px; font-weight: 700; color: var(--text); margin: 0 0 12px; }
+    .agent-list { list-style: none; padding: 0; margin: 0 0 20px; }
+    .agent-list-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+      margin-bottom: 8px; background: #fafafa;
+    }
+    .agent-list-info { display: flex; align-items: center; gap: 10px; }
+    .agent-list-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--primary); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; flex-shrink: 0;
+    }
+    .agent-list-name  { font-size: 13px; font-weight: 600; }
+    .agent-list-email { font-size: 12px; color: var(--muted); }
+    .agent-list-role  { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 99px; }
+    .role-admin { background: #ede9fe; color: #6d28d9; }
+    .role-agent { background: #f0fdf4; color: #166534; }
+    .btn-delete-agent {
+      background: none; border: 1.5px solid var(--border); border-radius: 6px;
+      padding: 4px 10px; font-size: 12px; color: var(--muted); cursor: pointer;
+    }
+    .btn-delete-agent:hover { border-color: var(--bad); color: var(--bad); background: var(--bad-bg); }
+    .create-agent-form { border: 1.5px solid var(--border); border-radius: 10px; padding: 16px; background: #fafafa; }
+    .create-form-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--text); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .admin-error {
+      background: var(--bad-bg); color: var(--bad); border-radius: 8px;
+      padding: 10px 14px; font-size: 13px; margin-bottom: 12px; display: none;
+    }
+    .admin-success {
+      background: var(--good-bg); color: var(--good); border-radius: 8px;
+      padding: 10px 14px; font-size: 13px; margin-bottom: 12px; display: none;
+    }
+    .admin-close-row { text-align: right; margin-top: 16px; }
+    .agents-loading { font-size: 13px; color: var(--muted); padding: 12px 0; }
+
+    /* ââ RESPONSIVE ââââââââââââââââââââââââââââââââââââââââââââââââ */
+    @media(max-width:1100px){ .charts-grid{grid-template-columns:1fr 1fr} .charts-grid .chart-card:first-child{grid-column:1/-1} }
+    @media(max-width:760px){ .page{padding:16px} .header{padding:0 16px} .kpi-row{grid-template-columns:1fr 1fr} .charts-grid{grid-template-columns:1fr} }
+    @media(max-width:480px){ .kpi-row{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+
+<!-- ââ HEADER âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ -->
+<header class="header">
+  <div class="header-left">
+    <div class="hicon">ð</div>
+    <div class="htitle">CSAT Dashboard <small id="recMeta"></small></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span class="live-badge"><span class="live-dot"></span>Live</span>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CSAT Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #f0f2f6;
+      --card:        #ffffff;
+      --primary:     #4f46e5;
+      --primary-lt:  #eef2ff;
+      --good:        #16a34a;
+      --good-bg:     #dcfce7;
+      --bad:         #dc2626;
+      --bad-bg:      #fee2e2;
+      --warn:        #d97706;
+      --warn-bg:     #fef3c7;
+      --text:        #0f172a;
+      --muted:       #64748b;
+      --border:      #e2e8f0;
+      --radius:      14px;
+      --shadow:      0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ──────────────────────────────────────────────────── */
+    .header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 200;
+      box-shadow: var(--shadow);
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .hicon {
+      width: 34px; height: 34px;
+      background: var(--primary); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; font-size: 17px;
+    }
+    .htitle { font-size: 16px; font-weight: 700; }
+    .htitle small { font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 8px; }
+    .live-badge {
+      background: #dcfce7; color: #15803d;
+      font-size: 11px; font-weight: 600;
+      padding: 3px 9px; border-radius: 99px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .live-dot { width:6px; height:6px; border-radius:50%; background:#16a34a; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .header-meta { font-size: 12px; color: var(--muted); }
+
+    /* ── PAGE ────────────────────────────────────────────────────── */
+    .page { max-width: 1440px; margin: 0 auto; padding: 24px 32px 48px; }
+
+    /* ── FILTER BAR ──────────────────────────────────────────────── */
+    .filter-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 20px;
+      display: flex; align-items: flex-end; flex-wrap: wrap; gap: 14px;
+      margin-bottom: 22px; box-shadow: var(--shadow);
+    }
+    .fg { display: flex; flex-direction: column; gap: 4px; }
+    .fg label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing:.06em; }
+    .fg input, .fg select {
+      border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 7px 11px; font-size: 13px; color: var(--text);
+      background: #fafafa; min-width: 140px; transition: border-color .15s;
+    }
+    .fg input:focus, .fg select:focus { outline: none; border-color: var(--primary); background: #fff; }
+    .filter-sep { width: 1px; height: 36px; background: var(--border); align-self: flex-end; }
+    .btn-primary {
+      background: var(--primary); color: #fff;
+      border: none; border-radius: 8px; padding: 8px 18px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .btn-primary:hover { opacity: .88; }
+    .btn-ghost {
+      background: none; color: var(--muted);
+      border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 7px 14px; font-size: 13px; cursor: pointer;
+    }
+    .btn-ghost:hover { border-color: #94a3b8; color: var(--text); }
+
+    /* ── KPI CARDS ───────────────────────────────────────────────── */
+    .kpi-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 22px; }
+    .kpi-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px 22px;
+      box-shadow: var(--shadow); position: relative; overflow: hidden;
+    }
+    .kpi-card::before {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 4px; height: 100%; border-radius: 4px 0 0 4px;
+    }
+    .kpi-card.c-csat::before  { background: var(--primary); }
+    .kpi-card.c-total::before { background: #0ea5e9; }
+    .kpi-card.c-good::before  { background: var(--good); }
+    .kpi-card.c-bad::before   { background: var(--bad); }
+    .kpi-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing:.06em; margin-bottom: 8px; }
+    .kpi-value { font-size: 36px; font-weight: 800; line-height: 1; letter-spacing: -.02em; }
+    .kpi-card.c-csat  .kpi-value { color: var(--primary); }
+    .kpi-card.c-total .kpi-value { color: #0369a1; }
+    .kpi-card.c-good  .kpi-value { color: var(--good); }
+    .kpi-card.c-bad   .kpi-value { color: var(--bad); }
+    .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 5px; }
+    .kpi-csat-high .kpi-value { color: var(--good) !important; }
+    .kpi-csat-high::before    { background: var(--good) !important; }
+    .kpi-csat-mid  .kpi-value { color: var(--warn) !important; }
+    .kpi-csat-mid::before     { background: var(--warn) !important; }
+    .kpi-csat-low  .kpi-value { color: var(--bad)  !important; }
+    .kpi-csat-low::before     { background: var(--bad)  !important; }
+
+    /* ── CHARTS ──────────────────────────────────────────────────── */
+    .charts-grid {
+      display: grid; grid-template-columns: 2fr 1fr 1fr;
+      gap: 16px; margin-bottom: 22px;
+    }
+    .chart-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+      box-shadow: var(--shadow);
+    }
+    .chart-head { font-size: 13px; font-weight: 700; margin-bottom: 16px; display:flex; align-items:center; justify-content:space-between; }
+    .chart-head small { font-size: 11px; font-weight: 500; color: var(--muted); }
+
+    /* ── TABLE SECTION ───────────────────────────────────────────── */
+    .section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .section-title { font-size: 15px; font-weight: 700; }
+    .badge-count {
+      background: var(--bad-bg); color: var(--bad);
+      font-size: 12px; font-weight: 700;
+      padding: 2px 9px; border-radius: 99px;
+    }
+    .table-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: #f8fafc; }
+    th {
+      padding: 11px 14px; text-align: left;
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .06em;
+      border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #fafbff; }
+
+    a.tid {
+      font-family: 'SF Mono','Consolas',monospace;
+      color: var(--primary); font-size: 12px; font-weight: 600;
+      background: var(--primary-lt); padding: 2px 7px; border-radius: 5px;
+      text-decoration: none; display: inline-flex; align-items: center; gap: 3px;
+    }
+    a.tid:hover { background: var(--primary); color: #fff; }
+    span.tid {
+      font-family: 'SF Mono','Consolas',monospace;
+      color: var(--primary); font-size: 12px; font-weight: 600;
+      background: var(--primary-lt); padding: 2px 7px; border-radius: 5px;
+    }
+    .pill { display: inline-flex; padding: 2px 9px; border-radius: 99px; font-size: 12px; font-weight: 500; }
+    .pill-brand { background: #ede9fe; color: #6d28d9; }
+    .pill-type  { background: #e0f2fe; color: #075985; }
+    .pill-group { background: #fef9c3; color: #854d0e; }
+    .pill-agent { background: #f0fdf4; color: #166534; }
+    .comment-cell { max-width: 280px; color: var(--muted); font-style: italic; font-size: 12px; line-height: 1.5; }
+    .no-comment { color: #cbd5e1; font-style: normal; }
+    .date-cell { white-space: nowrap; color: var(--muted); font-size: 12px; }
+
+    /* Analyze button */
+    .btn-analyze {
+      background: var(--primary-lt); color: var(--primary);
+      border: 1.5px solid #c7d2fe; border-radius: 6px;
+      padding: 4px 10px; font-size: 12px; font-weight: 600;
+      cursor: pointer; white-space: nowrap; transition: all .15s;
+    }
+    .btn-analyze:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-analyze:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-analyze.loading { opacity: .7; cursor: wait; }
+    .btn-analyze.has-rca { background: #ede9fe; color: #6d28d9; border-color: #c4b5fd; }
+    .btn-analyze.has-rca:hover { background: #6d28d9; color: #fff; border-color: #6d28d9; }
+
+    /* ── MODAL ───────────────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.55);
+      z-index: 900; display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal-box {
+      background: white; border-radius: 16px;
+      width: 100%; max-width: 720px; max-height: 88vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 60px rgba(0,0,0,.28);
+      animation: mIn .2s ease;
+    }
+    @keyframes mIn { from{opacity:0;transform:scale(.95) translateY(10px)} to{opacity:1;transform:scale(1) translateY(0)} }
+    .modal-head {
+      padding: 20px 24px 16px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: flex-start;
+      position: sticky; top: 0; background: white; z-index: 1;
+      border-radius: 16px 16px 0 0;
+    }
+    .modal-title { font-size: 16px; font-weight: 700; color: var(--text); }
+    .modal-sub   { font-size: 13px; color: var(--muted); margin-top: 3px; max-width: 500px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .modal-fd-link {
+      font-size: 12px; color: var(--primary); text-decoration: none;
+      display: inline-flex; align-items: center; gap: 3px; margin-top: 5px;
+    }
+    .modal-fd-link:hover { text-decoration: underline; }
+    .modal-close {
+      border: none; background: none; cursor: pointer;
+      font-size: 20px; color: var(--muted); padding: 2px 5px;
+      border-radius: 6px; flex-shrink: 0; line-height: 1;
+    }
+    .modal-close:hover { background: #f1f5f9; }
+    .modal-body { padding: 20px 24px 24px; }
+
+    /* RCA sections */
+    .rca-section { background: #f8fafc; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+    .rca-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing:.06em; color: var(--muted); margin-bottom: 8px; }
+    .rca-text { font-size: 14px; line-height: 1.65; color: var(--text); }
+    .rca-list { list-style: none; padding: 0; margin: 0; }
+    .rca-list li { font-size: 14px; line-height: 1.6; color: var(--text); padding: 4px 0 4px 20px; position: relative; }
+    .rca-list li::before { content: '→'; position: absolute; left: 3px; color: var(--muted); font-size: 12px; }
+    .rca-section.bad-s  { background: #fff5f5; }
+    .rca-section.bad-s  .rca-label { color: var(--bad); }
+    .rca-section.bad-s  .rca-list li::before { content: '•'; color: var(--bad); }
+    .rca-section.good-s { background: #f0fdf4; }
+    .rca-section.good-s .rca-label { color: var(--good); }
+    .rca-section.good-s .rca-list li::before { content: '✓'; color: var(--good); }
+    .sev-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+    .sev-high   { background: var(--bad-bg);  color: var(--bad);  }
+    .sev-medium { background: var(--warn-bg); color: var(--warn); }
+    .sev-low    { background: var(--good-bg); color: var(--good); }
+    .csat-comment-box {
+      background: #f8fafc; border-left: 3px solid var(--warn);
+      border-radius: 0 8px 8px 0; padding: 10px 14px; margin-bottom: 16px;
+      font-size: 13px; color: var(--text); font-style: italic; line-height: 1.5;
+    }
+    .csat-comment-label { font-style: normal; font-size: 11px; font-weight: 700; color: var(--warn); text-transform: uppercase; letter-spacing:.05em; margin-bottom: 4px; }
+    .no-anthropic-warn {
+      background: var(--warn-bg); border-radius: 8px; padding: 12px 16px;
+      font-size: 13px; color: var(--warn); margin-bottom: 16px;
+    }
+    .rca-section.comment-analysis { background: #fefce8; }
+    .rca-section.comment-analysis .rca-label { color: #854d0e; }
+    .rca-section.agent-summary { background: #f0f9ff; }
+    .rca-section.agent-summary .rca-label { color: #0369a1; }
+    .rca-footer {
+      margin-top: 16px; padding: 10px 14px;
+      background: #f8fafc; border-radius: 8px;
+      font-size: 12px; color: var(--muted);
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+    }
+    .btn-reanalyze {
+      background: none; border: 1.5px solid var(--border); border-radius: 7px;
+      padding: 5px 12px; font-size: 12px; cursor: pointer; color: var(--muted);
+      transition: all .15s;
+    }
+    .btn-reanalyze:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* ── STATES ──────────────────────────────────────────────────── */
+    .state-box { display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; padding:60px 20px; color:var(--muted); font-size:13px; }
+    .spinner { width:24px; height:24px; border:2.5px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin .7s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    /* ── AGENT LOGIN ─────────────────────────────────────────────── */
+    .btn-login {
+      background: none; border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 6px 14px; font-size: 13px; cursor: pointer; color: var(--muted);
+      display: flex; align-items: center; gap: 6px; transition: all .15s;
+    }
+    .btn-login:hover { border-color: var(--primary); color: var(--primary); }
+    .agent-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--primary-lt); border: 1.5px solid #c7d2fe;
+      border-radius: 99px; padding: 4px 12px 4px 6px; cursor: default;
+    }
+    .agent-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--primary); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+    .agent-name  { font-size: 13px; font-weight: 600; color: var(--text); }
+    .agent-email { font-size: 11px; color: var(--muted); }
+    .btn-logout {
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 18px; line-height: 1; padding: 0 2px;
+      margin-left: 2px;
+    }
+    .btn-logout:hover { color: var(--bad); }
+
+    /* Login modal */
+    .login-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.55);
+      z-index: 1000; display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .login-box {
+      background: white; border-radius: 16px; width: 100%; max-width: 420px;
+      box-shadow: 0 25px 60px rgba(0,0,0,.28); animation: mIn .2s ease; overflow: hidden;
+    }
+    .login-head {
+      background: var(--primary); padding: 28px 28px 24px;
+      color: white; text-align: center;
+    }
+    .login-head-icon { font-size: 32px; margin-bottom: 8px; }
+    .login-head-title { font-size: 18px; font-weight: 700; }
+    .login-head-sub { font-size: 13px; opacity: .8; margin-top: 4px; }
+    .login-form { padding: 24px 28px 28px; }
+    .lf-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing:.06em; display: block; margin-bottom: 6px; }
+    .lf-input {
+      width: 100%; border: 1.5px solid var(--border); border-radius: 8px;
+      padding: 10px 13px; font-size: 14px; color: var(--text);
+      transition: border-color .15s; margin-bottom: 16px;
+    }
+    .lf-input:focus { outline: none; border-color: var(--primary); }
+    .login-error {
+      background: var(--bad-bg); color: var(--bad); border-radius: 8px;
+      padding: 10px 14px; font-size: 13px; margin-bottom: 14px; display: none;
+    }
+    .btn-login-submit {
+      width: 100%; background: var(--primary); color: white;
+      border: none; border-radius: 8px; padding: 11px; font-size: 14px;
+      font-weight: 600; cursor: pointer; transition: opacity .15s;
+    }
+    .btn-login-submit:hover { opacity: .88; }
+    .btn-login-submit:disabled { opacity: .55; cursor: not-allowed; }
+    .login-note { font-size: 12px; color: var(--muted); text-align: center; margin-top: 14px; line-height: 1.5; }
+    .login-cancel { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 13px; text-decoration: underline; margin-top: 8px; display: block; width: 100%; text-align: center; }
+    .login-cancel:hover { color: var(--text); }
+
+    /* Lock hint in table */
+    .analyze-lock { font-size: 12px; color: #cbd5e1; white-space: nowrap; }
+
+    /* Admin gear button */
+    .btn-admin-gear {
+      background: none; border: none; cursor: pointer;
+      font-size: 16px; line-height: 1; padding: 0 2px 4px;
+      opacity: .7; transition: opacity .15s;
+    }
+    .btn-admin-gear:hover { opacity: 1; }
+
+    /* Setup / Admin panel modals (reuse login-box styles) */
+    .setup-box {
+      background: white; border-radius: 16px; width: 100%; max-width: 460px;
+      box-shadow: 0 25px 60px rgba(0,0,0,.28); animation: mIn .2s ease; overflow: hidden;
+    }
+    .admin-box {
+      background: white; border-radius: 16px; width: 100%; max-width: 560px;
+      box-shadow: 0 25px 60px rgba(0,0,0,.28); animation: mIn .2s ease; overflow: hidden;
+      max-height: 88vh; overflow-y: auto;
+    }
+    .admin-head { background: var(--primary); padding: 22px 24px 18px; color: white; }
+    .admin-head-title { font-size: 17px; font-weight: 700; }
+    .admin-head-sub   { font-size: 13px; opacity: .8; margin-top: 3px; }
+    .admin-body { padding: 22px 24px 26px; }
+    .admin-section-title { font-size: 13px; font-weight: 700; color: var(--text); margin: 0 0 12px; }
+    .agent-list { list-style: none; padding: 0; margin: 0 0 20px; }
+    .agent-list-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+      margin-bottom: 8px; background: #fafafa;
+    }
+    .agent-list-info { display: flex; align-items: center; gap: 10px; }
+    .agent-list-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--primary); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; flex-shrink: 0;
+    }
+    .agent-list-name  { font-size: 13px; font-weight: 600; }
+    .agent-list-email { font-size: 12px; color: var(--muted); }
+    .agent-list-role  { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 99px; }
+    .role-admin { background: #ede9fe; color: #6d28d9; }
+    .role-agent { background: #f0fdf4; color: #166534; }
+    .btn-delete-agent {
+      background: none; border: 1.5px solid var(--border); border-radius: 6px;
+      padding: 4px 10px; font-size: 12px; color: var(--muted); cursor: pointer;
+    }
+    .btn-delete-agent:hover { border-color: var(--bad); color: var(--bad); background: var(--bad-bg); }
+    .create-agent-form { border: 1.5px solid var(--border); border-radius: 10px; padding: 16px; background: #fafafa; }
+    .create-form-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--text); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .admin-error {
+      background: var(--bad-bg); color: var(--bad); border-radius: 8px;
+      padding: 10px 14px; font-size: 13px; margin-bottom: 12px; display: none;
+    }
+    .admin-success {
+      background: var(--good-bg); color: var(--good); border-radius: 8px;
+      padding: 10px 14px; font-size: 13px; margin-bottom: 12px; display: none;
+    }
+    .admin-close-row { text-align: right; margin-top: 16px; }
+    .agents-loading { font-size: 13px; color: var(--muted); padding: 12px 0; }
+
+    /* ── RESPONSIVE ──────────────────────────────────────────────── */
+    @media(max-width:1100px){ .charts-grid{grid-template-columns:1fr 1fr} .charts-grid .chart-card:first-child{grid-column:1/-1} }
+    @media(max-width:760px){ .page{padding:16px} .header{padding:0 16px} .kpi-row{grid-template-columns:1fr 1fr} .charts-grid{grid-template-columns:1fr} }
+    @media(max-width:480px){ .kpi-row{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ───────────────────────────────────────────────────────── -->
+<header class="header">
+  <div class="header-left">
+    <div class="hicon">📊</div>
+    <div class="htitle">CSAT Dashboard <small id="recMeta"></small></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span class="live-badge"><span class="live-dot"></span>Live</span>
+    <span class="header-meta" id="lastSync">Connecting…</span>
+
+    <!-- Logged-out state -->
+    <button class="btn-login" id="headerLoginBtn" onclick="openLoginModal()">
+      👤�Agent Login
+    </button>
+
+    <!-- Logged-in state (hidden until login) -->
+    <div class="agent-chip" id="headerAgentChip" style="display:none">
+      <div class="agent-avatar" id="agentInitials">?</div>
+      <div>
+        <div class="agent-name"  id="agentDisplayName"></div>
+        <div class="agent-email" id="agentDisplayEmail"></div>
+      </div>
+      <!-- Admin-only gear icon -->
+      <button class="btn-admin-gear" id="adminGearBtn" onclick="openAdminPanel()" title="Manage Agents" style="display:none">☙️</button>
+      <button class="btn-logout" onclick="logout()" title="Log out">✕</button>
+    </div>
+  </div>
+</header>
+
+<!-- ── PAGE ────────────────────────────────────────────────────────── -->
+<div class="page">
+
+  <!-- Filters -->
+  <div class="filter-card">
+    <div class="fg"><label>From</label><input type="date" id="fFrom" /></div>
+    <div class="fg"><label>To</label><input type="date" id="fTo" /></div>
+    <div class="fg">
+      <labe��w&�W���&V���6V�V7B�C�&dw&�W#���F���f�VS�"#���w&�W3���F������6V�V7C���F�c��F�b6�73�&fr#���&V��vV�C���&V���6V�V7B�C�&dvV�B#���F���f�VS�"#���vV�G3���F������6V�V7C���F�c��F�b6�73�&fr#���&V��'&�C���&V���6V�V7B�C�&d'&�B#���F���f�VS�"#���'&�G3���F������6V�V7C���F�c��F�b6�73�&f��FW"�6W#���F�c��'WGF��6�73�&'F��&��'�"��6Ɩ6��&ǔf��FW'2��#�Ǔ��'WGF����'WGF��6�73�&'F��v��7B"��6Ɩ6��'&W6WDf��FW'2��#�&W6WC��'WGF�����F�cࠢ�����6&G2����F�b6�73�&���&�r#��F�b6�73�&���6&B2�76B"�C�&6&D76B#��F�b6�73�&����&V�#�54B66�&S��F�c��F�b6�73�&���f�VR"�C�&�76B#�(	C��F�c��F�b6�73�&���7V"#�v��B�F�F�&FVC��F�c���F�c��F�b6�73�&���6&B2�F�F�#��F�b6�73�&����&V�#�&FVB7W'fW�3��F�c��F�b6�73�&���f�VR"�C�&�F�F�#�(	C��F�c��F�b6�73�&���7V"#�F�F�&W7��6W3��F�c���F�c��F�b6�73�&���6&B2�v��B#��F�b6�73�&����&V�#�v��B&F��w3��F�c��F�b6�73�&���f�VR"�C�&�v��B#�(	C��F�c��F�b6�73�&���7V"#�6F�6f�VB7W7F��W'3��F�c���F�c��F�b6�73�&���6&B2�&B#��F�b6�73�&����&V�#�&B&F��w3��F�c��F�b6�73�&���f�VR"�C�&�&B#�(	C��F�c��F�b6�73�&���7V"#��VVG2GFV�F�����F�c���F�c���F�cࠢ���6�'G2����F�b6�73�&6�'G2�w&�B#��F�b6�73�&6�'B�6&B#��F�b6�73�&6�'BֆVB#�54BG&V�B�6����vVV�ǒ55�@�RF��f��V�S��6������F�c��6�f2�C�&5G&V�B"�V�v�C�#c#���6�f3���F�c��F�b6�73�&6�'B�6&B#��F�b6�73�&6�'BֆVB#�'�w&�W��F�c��6�f2�C�&4w&�W"�V�v�C�####���6�f3���F�c��F�b6�73�&6�'B�6&B#��F�b6�73�&6�'BֆVB#�'�vV�B�6����F�#��6������F�c��6�f2�C�&4vV�B"�V�v�C�####���6�f3���F�c���F�cࠢ���&BF�6�WG2F&�R����F�b6�73�'6V7F���ֆVB#��7�6�73�'6V7F����F�F�R#�	��&B�&FVBF�6�WG3��7���7�6�73�&&FvR�6�V�B"�C�&&D&FvR#���7����F�c��F�b6�73�'F&�R�6&B#��F�b�C�'F&�Uw&#��F�b6�73�'7FFR�&��#��F�b6�73�'7���W"#���F�c���F��rFF(
+c��F�c���F�c���F�cࠣ��F�c�����vR��ࠣ���)H)H��D�)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H������)H)H��t����D�)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H����F�b6�73�&��v����fW&��"�C�&��v����F�"7G��S�&F�7������R#��F�b6�73�&��v���&��#��F�b6�73�&��v��ֆVB#��F�b6�73�&��v��ֆVB֖6��#�	�C��F�c��F�b6�73�&��v��ֆVB�F�F�R#�54BF6�&�&B��v����F�c��F�b6�73�&��v��ֆVB�7V"#�6�v���v�F���W"F6�&�&B66�V�C��F�c���F�c��F�b6�73�&��v���f�&�#��F�b�C�&��v��W'&�""6�73�&��v���W'&�"#���F�c���&V�6�73�&�b��&V�"f�#�&��v��V���#�V������&V��Ɩ�WB6�73�&�b֖�WB"G�S�&V���"�C�&��v��V��� ��6V���FW#�'��T��W&6����6�� ���W�F�v��&�b�WfV�B�W����tV�FW"r�F�7V�V�B�vWDV�V�V�D'��B�v��v��77v�&Br��f�7W2��"����&V�6�73�&�b��&V�"f�#�&��v��77v�&B#�77v�&C���&V��Ɩ�WB6�73�&�b֖�WB"G�S�'77v�&B"�C�&��v��77v�&B ��6V���FW#�.(
+.(
+.(
+.(
+.(
+.(
+.(
+.(
+" ���W�F�v��&�b�WfV�B�W����tV�FW"r���v��W6W"��"���'WGF��6�73�&'F����v���7V&֗B"�C�&��v��'F�"��6Ɩ6��&��v��W6W"��#�6�v�����'WGF����'WGF��6�73�&��v���6�6V�"��6Ɩ6��&6��6T��v����F�#�6�6V���'WGF�����F�c���F�c���F�cࠣ���)H)Hd�%5B�D��R4UEU��D�)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H����F�b6�73�&��v����fW&��"�C�'6WGW��F�"7G��S�&F�7������R#��F�b6�73�'6WGW�&��#��F�b6�73�&��v��ֆVB#��F�b6�73�&��v��ֆVB֖6��#�	�I��F�c��F�b6�73�&��v��ֆVB�F�F�R#�vV�6��R6WBF֖�77v�&C��F�c��F�b6�73�&��v��ֆVB�7V"#�7&VFR77v�&Bf�"�'VF�V�v�w&�V�B�6����F�c���F�c��F�b6�73�&��v���f�&�#��F�b�C�'6WGWW'&�""6�73�&��v���W'&�"#���F�c���&V�6�73�&�b��&V�"f�#�'6WGW77v�&B#�6���6R77v�&C���&V��Ɩ�WB6�73�&�b֖�WB"G�S�'77v�&B"�C�'6WGW77v�&B ��6V���FW#�$֖��6�&7FW'2 ���W�F�v��&�b�WfV�B�W����tV�FW"r�F�7V�V�B�vWDV�V�V�D'��B�w6WGW77v�&C"r��f�7W2��"����&V�6�73�&�b��&V�"f�#�'6WGW77v�&C"#�6��f�&�77v�&C���&V��Ɩ�WB6�73�&�b֖�WB"G�S�'77v�&B"�C�'6WGW77v�&C" ��6V���FW#�%&WVB77v�&B ���W�F�v��&�b�WfV�B�W����tV�FW"r�6WGWF֖ₒ"���'WGF��6�73�&'F����v���7V&֗B"�C�'6WGW'F�"��6Ɩ6��'6WGWF֖ₒ#�7&VFRF֖�66�V�C��'WGF�����F�c���F�c���F�cࠣ���)H)HDԔ��T���D�)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H����F�b6�73�&��v����fW&��"�C�&F֖��V���F�"7G��S�&F�7������R#��F�b6�73�&F֖��&��#��F�b6�73�&F֖�ֆVB#��F�b7G��S�&F�7���f�W��Ɩv�֗FV�3�6V�FW#��W7F�g��6��FV�C�76R�&WGvVV�#��F�c��F�b6�73�&F֖�ֆVB�F�F�R#�)�������vRvV�G3��F�c��F�b6�73�&F֖�ֆVB�7V"#�FB�"&V��fRF6�&�&B66�V�G3��F�c���F�c��'WGF��7G��S�&&6�w&�V�C����S�&�&FW#����S�7W'6�#����FW#�6���#�v��FS�f��B�6��S�#��Ɩ�RֆV�v�C��FF��s�'�G��"��6Ɩ6��&6��6TF֖��V�#�)�S��'WGF�����F�c���F�c��F�b6�73�&F֖��&�G�#ࠢ���7W'&V�BvV�G2Ɨ7B����F�b6�73�&F֖��6V7F����F�F�R#�7W'&V�B66�V�G3��F�c��F�b�C�&vV�DƗ7Ew&#��F�b6�73�&vV�G2���F��r#���F��~(
+c��F�c���F�cࠢ�F�b�C�&F֖��6r"6�73�&F֖��7V66W72#���F�c��F�b�C�&F֖�W'""6�73�&F֖��W'&�"#���F�cࠢ���7&VFRvV�Bf�&�����F�b6�73�&7&VFR�vV�B�f�&�#��F�b6�73�&7&VFR�f�&��F�F�R#�)�RFB�WrvV�C��F�c��F�b6�73�&f�&��&�r#��F�b6�73�&fr#���&V�6�73�&�b��&V�#�gV����S���&V��Ɩ�WB6�73�&�b֖�WB"G�S�'FW�B"�C�&�WtvV�D��R"�6V���FW#�$��R6֗F�"7G��S�&�&v���&�GF�ӣ"����F�c��F�b6�73�&fr#���&V�6�73�&�b��&V�#�V������&V��Ɩ�WB6�73�&�b֖�WB"G�S�&V���"�C�&�WtvV�DV���"�6V���FW#�&��TW���R�6��"7G��S�&�&v���&�GF�ӣ"����F�c���F�c��F�b6�73�&fr"7G��S�&�&v���&�GF�ӣ'�#���&V�6�73�&�b��&V�#�77v�&C���&V��Ɩ�WB6�73�&�b֖�WB"G�S�'77v�&B"�C�&�WtvV�E77v�&B"�6V���FW#�$֖��6�&7FW'2"7G��S�&�&v���&�GF�ӣ"����F�c��'WGF��6�73�&'F��&��'�"�C�&7&VFTvV�D'F�"��6Ɩ6��&7&VFTvV�B��"7G��S�'v�GF��S�FF��s��#�FBvV�C��'WGF�����F�cࠢ�F�b6�73�&F֖��6��6R�&�r#��'WGF��6�73�&'F��v��7B"��6Ɩ6��&6��6TF֖��V�#�6��6S��'WGF�����F�c���F�c���F�c���F�cࠣ���)H)H�ŕ�R��D�)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H����F�b6�73�&��F���fW&��"�C�&�Ǘ�T��F�"7G��S�&F�7������R"��6Ɩ6��&�fW&��6Ɩ6��WfV�B�#��F�b6�73�&��F��&��#��F�b6�73�&��F�ֆVB#��F�c��F�b6�73�&��F��F�F�R"�C�&�F�F�R#�F�6�WB�Ǘ6�3��F�c��F�b6�73�&��F��7V""�C�&�7V"#���F�c��6�73�&��F��fB�Ɩ�"�C�&�fDƖ�"�&Vc�"2"F&vWC�%�&��"&V��&���V�W""7G��S�&F�7������R#��V���g&W6�FW6�(ip������F�c��'WGF��6�73�&��F��6��6R"��6Ɩ6��&6��6T��F�#�)�S��'WGF�����F�c��F�b�C�&��F�&�G�#���F�c���F�c���F�cࠣ�67&�C��)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y �4��d�r(iVF�BdE�D����&Vf�&R�V��p�)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y���WBdE�D�����wv�w&�V�F�&rr��v�w&�V�F�&r�g&W6�FW6��6�Ц6��7BTDtU�U$��v�GG3����FF�&���'Wv��77f7R�7W&6R�6��gV�7F���2�c�7��2�76Bp�6��7BTDtU�4T5$UB�wv�w&�V�B�76B�7��2�##bp�6��7B4%�U$��v�GG3����FF�&���'Wv��77f7R�7W&6R�6�p�6��7B4%��U��vW���$v6�����W��攗4��#V44�d���d4���W��34֔����E�&���g��4�4��Ŧ��d�׃�w�v�E��c5���e�4�%�����v�6ӗ5�4�d��gV##F��4������S4�ה�FsT�F�4��cF44�d֤D�Fs$�F����Gg�5�E5&�֔G$ED65E���7�e��d���Fe�p�����&F6�FVBF֖�(	B'�76W27W&6RWF�V�F�&Vǐ�6��7BDԔ��T����v�'VF�V�v�w&�V�B�6��p�6��7BDԔ��r�ut�w#V�B3#bp���)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y ���@�)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y��6��7B6"�7W&6R�7&VFT6ƖV�B�4%�U$��4%��U����WF���W'6�7E6W76���f�6R�WF�&Vg&W6�F��V�f�6RЧҐ��WB����Ц�WB&EF�6�WD������F�6�WD�B(i"gV��&�r�W6VB'��Ǘ�UF�6�WB����WB&6������F�6�WD�B(i"��Ǘ�VE�'���Ǘ�VE�B�6WfW&�G��(	B��FVBg&��D ��WB6�'G2��Р�6��7BB��B��F�7V�V�B�vWDV�V�V�D'��B��B��6��7BW62�2��7G&��r�2��rr���&W�6R��b�r�rf��r��&W�6R����r�rf�C�r��&W�6R����r�rfwC�r��&W�6R��"�r�rgV�C�r���gV�7F����4v��B�"��&WGW&�"�&F��s��F���vW$66R�����vv��BrЦgV�7F����4&B�"��&WGW&�"�&F��s��F���vW$66R�����v&BrР��)H)HFFR�V�W'2)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H��gV�7F�����DFFW2�F�2�����6��7BF���WrFFR���g&����WrFFR���g&���6WDFFR�g&���vWDFFR���F�2��B�vdg&��r��f�VR�g&���F��4�7G&��r���6Ɩ6R����B�veF�r��f�VR�F��F��4�7G&��r���6Ɩ6R����Р�gV�7F���vVV��W���6���6��7BB��WrFFR��6��F��B�vWDF�����p�B�6WDFFR�B�vWDFFR���F����&WGW&�B�F��4�7G&��r���6Ɩ6R����Р�gV�7F���f�DFFR��6����b��6�&WGW&�~(	Bp�&WGW&��WrFFR��6��F���6�TFFU7G&��r�vV��t"r��F��s"�F�v�Br����F��w6��'BrǖV#�v�V�W&�2wҐ�Р��)H)HfWF6���FF�v��FVB�)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H��7��2gV�7F���fWF6�����6��7B&�w2��Т�WBg&��� �v���R�G'VR���6��7B�FF�W'&�"��v�B6 ��g&�҂v76E�&W7��6W2r���6V�V7B�wF�6�WE��B�w&�W���R�vV�E���R�'&�E���R�F�6�WE�G�R�&F��r�6���V�B�&W7��FVE�Br����&FW"�w&W7��FVE�Br��66V�F��s�f�6RҐ��&�vR�g&���g&���������b�W'&�"��6��6��R�W'&�"�W'&�"��'&V�Т�b�FF���V�wF��'&V��&�w2�W6�����FF���b�FF��V�wF���'&V��g&���� �Т&WGW&�&�w0�Р��)H)HG&�F�v�2)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H��gV�7F����V�FTG&�F�v�2�FF���6��7BV��b�������Wr6WB�FF���"��%�eҒ�f��FW"�&���V⒕��6�'B������vdw&�Wr�vw&�W���Ru�ŲvdvV�Br�vvV�E���Ru�Ųvd'&�Br�v'&�E���Ru���f�$V6�����B�eҒ����6��7B6V��B��B��&Wb�6V��f�VP�v���R�6V���F���2��V�wF���6V��&V��fR���V��b��f�$V6��b���6��7B��F�7V�V�B�7&VFTV�V�V�B�v�F���r����f�VR���FW�D6��FV�B�c�6V��V�D6���B��Ґ�6V��f�VR�&W`�Ґ�Р��)H)Hf��FW")H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H��gV�7F���vWDf��FW&VB����6��7Bg&���B�vdg&��r��f�VP�6��7BF��B�veF�r��f�VP�6��7Bw&�W�B�vdw&�Wr��f�VP�6��7BvV�B�B�vdvV�Br��f�VP�6��7B'&�B�B�vd'&�Br��f�VP�&WGW&����f��FW"�"����6��7BB�"�&W7��FVE�C��6Ɩ6R�����rp��b�g&��bbB�g&�Ғ&WGW&�f�6P��b�F�bbB�F�&WGW&�f�6P��b�w&�Wbb"�w&�W���R��w&�W�&WGW&�f�6P��b�vV�Bbb"�vV�E���R��vV�B�&WGW&�f�6P��b�'&�Bbb"�'&�E���R��'&�B�&WGW&�f�6P�&WGW&�G'VP�Ґ�Р��)H)H��2)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H��gV�7F���WFFT��2�FF���6��7BF�F��FF��V�wF��6��7Bv��B�FF�f��FW"��4v��B���V�wF��6��7B&B�FF�f��FW"��4&B���V�wF��6��7B76B�F�F����F��&�V�B�v��B�F�F£�� ��B�v�76Br��FW�D6��FV�B�76B�rRp�B�v�F�F�r��FW�D6��FV�B�F�F��F���6�U7G&��r���B�v�v��Br��FW�D6��FV�B�v��B�F���6�U7G&��r���B�v�&Br��FW�D6��FV�B�&B�F���6�U7G&��r����6��7B6&B�B�v6&D76Br��6&B�6�74Ɨ7B�&V��fR�v���76Bֆ�v�r�v���76B�֖Br�v���76B���rr�v2�76Br��6&B�6�74Ɨ7B�FB�76B����v���76Bֆ�v�r�76B��c�v���76B�֖Br�v���76B���rr��Р��)H)HG&V�B6�'B)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H��gV�7F���WFFUG&V�B�FF���6��7BvVV�2��ТFF�f�$V6��"�����b�"�&W7��FVE�B�&WGW&�6��7B��vVV��W��"�&W7��FVE�B���b�vVV�5��ҒvVV�5�����s��#�Т�b��4v��B�"��vVV�5����r���V�6R�b��4&B�"��vVV�5����"���Ґ�6��7B�&V�2��&�V7B�W�2�vVV�2��6�'B���6��7B7B��&V�2�������6��7B�r�'��vVV�5����C�r�#�&WGW&�C��F��&�V�B�r�B����V��Ґ�6��7Bf��2��&V�2������vVV�5����r�vVV�5����"����b�6�'G2�G&V�B�6�'G2�G&V�B�FW7G&�����6�'G2�G&V�B��Wr6�'B�B�v5G&V�Br��vWD6��FW�B�s&Br����FF���&V�2��FF6WG3����G�S�vƖ�Rr��&Vât54BRr�FF�7B��&�&FW$6���#�r3FcCfSRr�&6�w&�V�D6���#�w&v&�s��s�##���r�r�f��çG'VR�FV�6����B�����D&6�w&�V�D6���#�r3FcCfSRr����E&F�W3�B����D��fW%&F�W3�b����4�C�w��r�7�v3�G'VR����G�S�v&"r��&Vâuf��V�Rr�FF�f��2��&6�w&�V�D6���#�w&v&�B�cR�#32��R�r�&�&FW$6���#�w&v&�B�cR�#32��B�r��&�&FW%v�GF���&�&FW%&F�W3�B����4�C�w�"rТТ����F���3���&W7��6�fS�G'VR���FW&7F��㧶��FS�v��FW�rƖ�FW'6V7C�f�6W����Vv��3���VvV�C���&V�3��f��C��6��S�'��W6U���E7G��S�G'VR����E7G��Uv�GF������F���F���6��&6�3���&Væ3��2�FF6WB��&V����t54BRs�54C�G�2�&w�V�f��V�S�G�2�&w������66�W3����ç��6�F���v�VgBr�֖������F�6�3��6��&6��c��b�rRr�f��C��6��S����w&�C��6���#�r6ccVc�w�����#���6�F���w&�v�Br�֖��F�6�3��f��C��6��S����w&�C��G&t��6�'D&V�f�6W�������F�6�3��f��C��6��S�����F�6�4Ɩ֗C���w&�C��6���#�r6c�ff2w�ТТТҐ�Р��)H)H&"6�'G2�w&�W�vV�B�)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H��gV�7F���WFFT&"�6�f4�B��W��FF�f�V�B�6���6��7B���ТFF�f�$V6��"����6��7B��%�f�V�E���uV���v�p��b����Ғ������s��#�Т�b��4v��B�"�������r���V�6R�b��4&B�"�������"���Ґ�6��7B6�'FVB��&�V7B�V�G&�W2����6�'B���"���%���r�%���"�҆���r����"���6Ɩ6R��6��6��7B�&V�2�6�'FVB������ғ�沐�6��7B76B�6�'FVB������eғ��6��7BC�b�r�b�#�&WGW&�C��F��&�V�B�b�r�B���Ґ�6��7B6���'2�76B���b��c�Ӄ�w&v&�#"�c2�sB��sR�s�c��c�w&v&�#r���b��sR�s�w&v&�##�3��3���sR�r����b�6�'G5��W�Ғ6�'G5��W���FW7G&�����6�'G5��W����Wr6�'B�B�6�f4�B��vWD6��FW�B�s&Br����G�S�v&"r��FF���&V�2�FF6WG3����&Vât54BRr�FF�76B�&6�w&�V�D6���#�6���'2�&�&FW%&F�W3�R������F���3�����FW���3�w�r�&W7��6�fS�G'VR���Vv��3���VvV�C��F�7���f�6W���F���F���6��&6�3���&Væ7G��簢6��7B��e��6�'FVE�7G��FF��FW�Т&WGW&��54C�G�7G��&w�V�)�RG�b�w�)��G�b�'�F�FâG�b�r�b�'�Т������66�W3������֖������F�6�3��6��&6��c��b�rRr�f��C��6��S����w&�C��6���#�r6ccVc�w�������F�6�3��f��C��6��S����w&�C��F�7���f�6W�ТТТҐ�Р��)H)H&BF�6�WG2F&�R)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H��gV�7F���WFFUF&�R�FF������)H)HvFS�V�F�&R6V7F����2��6�VBV�F���vV�B��w2��)H)H)H)H)H)H)H)H)H)H ��b���vvVD��vV�B���B�v&D&FvRr��FW�D6��FV�B�	�I"p�B�wF&�Uw&r����W$�D��� ��F�b6�73�'7FFR�&��"7G��S�'FF��s�Sg�#��v�G�#��F�b7G��S�&f��B�6��S�CG��Ɩ�RֆV�v�C�#�	�I#��F�c��F�b7G��S�&f��B�6��S�W��f��B�vV�v�C�s�6���#�f"���FW�B�#���v��F�f�Wr&B�&FVBF�6�WG3��F�c��F�b7G��S�&f��B�6��S�7��6���#�f"����WFVB��FW�B�Ɩv�6V�FW#����v�GF��3#��Ɩ�RֆV�v�C��b#���r��v�F���W"F6�&�&B66�V�BF�f�Wr�B�Ǘ�R&B�&FVBF�6�WG2���F�c��'WGF��6�73�&'F��&��'�"��6Ɩ6��&�V���v����F�"7G��S�&�&v���F��G��FF��s���#'�#�	�BvV�B��v����'WGF�����F�c� �&WGW&�Р�6��7B&B�FF�f��FW"��4&B��B�v&D&FvRr��FW�D6��FV�B�&B��V�wF�����7F�&Rf�"�Ǘ�UF�6�WB������W0�&EF�6�WD���Т&B�f�$V6��"���&EF�6�WD��"�F�6�WE��E��"Ґ���b�&B��V�wF����B�wF&�Uw&r����W$�D����F�b6�73�'7FFR�&��#�	����&B�&FVBF�6�WG2��F��2W&��B���F�c� �&WGW&�Р�6��7B&�w2�&B���"����6��7BfEW&��dE�D������GG3���G�dE�D������g&W6�FW6��6����V�FW6��F�6�WG2�G�"�F�6�WE��G� ���V���6��7BF�DV��fEW&����6�73�'F�B"�&Vc�"G�fEW&��"F&vWC�%�&��"&V��&���V�W"#�2G�W62�"�F�6�WE��B��(is��� ���7�6�73�'F�B#�2G�W62�"�F�6�WE��B����7�� �6��7B6���V�B�"�6���V�@��"G�W62�"�6���V�B��& ���7�6�73�&���6���V�B#���6���V�B�VgC��7�� ��&WGW&��G#��FC�G�F�DV����FC��FC��7�6�73�'�������vV�B#�G�W62�"�vV�E���W��~(	Br����7����FC��FC��7�6�73�'�������w&�W#�G�W62�"�w&�W���W��~(	Br����7����FC��FC�G�"�'&�E���R��7�6�73�'�������'&�B#�G�W62�"�'&�E���R����7���s�7�7G��S�&6���#�66&CVS#�(	C��7��w���FC��FC�G�"�F�6�WE�G�R��7�6�73�'�������G�R#�G�W62�"�F�6�WE�G�R����7���s�7�7G��S�&6���#�66&CVS#�(	C��7��w���FC��FB6�73�&6���V�B�6V��#�G�6���V�G���FC��FB6�73�&FFR�6V��#�G�f�DFFR�"�&W7��FVE�B����FC��FC��'WGF��6�73�&'F���Ǘ�RG�&6��"�F�6�WE��E��r�2�&6r�rw�"�C�&'F��G�"�F�6�WE��G�"��6Ɩ6��&�Ǘ�UF�6�WB�G�"�F�6�WE��GҒ#�G�&6��"�F�6�WE��E��	�8�f�Wr$4r�	�H��Ǘ�Rw���'WGF�����FC���G#� �Ғ����rr���B�wF&�Uw&r����W$�D��� ��F�b6�73�'F&�R�67&���#��F&�S��F�VC��G#��F��F�6�WB�C��F���F��vV�C��F���F��w&�W��F���F��'&�C��F���F��F�6�WBG�S��F���F��7W7F��W"6���V�C��F���F��FFS��F���F��$4��F����G#���F�VC��F&�G��G�&�w7���F&�G����F&�S���F�c� ����&Vg&W6�$47FGW2&FvW2g&��D"�����&��6���r����E&67FGW2���Р��)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y �$45DEU2(	B��B6fVB$42�BWFFR'WGF��7FFW2��F&�P�)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y��7��2gV�7F�����E&67FGW2�����b���vvVD��vV�B�&WGW&�G'���6��7B&�2��WrU$�6V&6�&�2��7F���vvWE�&62rҐ�6��7B&W2�v�BfWF6��G�TDtU�U$���G�&�7����VFW'3�����WF��VFW'2���Ґ��b�&W2����&WGW&�6��7BFF�v�B&W2�6�ₐ��b�FF�&62�&WGW&ࠢ��WFFR&6� �&6���ТFF�&62�f�$V6��"���&6��"�F�6�WE��E��"Ґ����WFFR�f�6�&�R�Ǘ�R'WGF��0��&�V7B�W�2�&6���f�$V6��F�B����6��7B'F��B�'F��G�F�G����b�'F�bb'F��F�6&�VB���'F��FW�D6��FV�B�	�8�f�Wr$4p�'F��6�74Ɨ7B�FB�v�2�&6r��ТҐ��6F6�����6��V�Fǒ�v��&R��ЧР��)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y ��ŕ�R���D��)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y��7��2gV�7F����Ǘ�UF�6�WB�F�6�WD�B�f�&6R�f�6R���6��7B&�r�&EF�6�WD��F�6�WD�E����Р���F�6&�RF�R'WGF��v���R��F��p�6��7B'F��B�'F��G�F�6�WD�G���6��7B�E&6�&6��F�6�WD�EТ�b�'F��'F��F�6&�VB�G'VS�'F��6�74Ɨ7B�FB�v��F��rr��'F��FW�D6��FV�B�~(�2��F��~(
+brР�6��t��FF�6�WD�B�&�r���G'���6��7B&�2��WrU$�6V&6�&�2���7F���v�Ǘ�Rr��F�6�WE��C�F�6�WD�B��6���V�C�&�r�6���V�B��rr���Ǘ�VE�'����vvVD��vV�C����R����vvVD��vV�C��V�����uV���v�r��f�&6S�f�&6R�wG'VRr�vf�6Rp�Ґ�6��7B&W2�v�BfWF6��G�TDtU�U$���G�&�7�����VFW'3�����WF��VFW'2��ТҐ�6��7BFF�v�B&W2�6�ₐ��b�&W2�����FF�W'&�"�F�&�r�WrW'&�"�FF�W'&�"��6W'fW"W'&�"G�&W2�7FGW7������WFFR��6�&6�6�'WGF��7F�27G��VB6�'&V7Fǐ��b�FF�6fVB���&6��F�6�WD�E����F�6�WE��C�F�6�WD�B���Ǘ�VE�'��FF��Ǘ�VE�'����Ǘ�VE�C�FF��Ǘ�VE�B��6WfW&�G��FF��Ǘ6�3��6WfW&�G��ТР�&V�FW$�Ǘ6�2�F�6�WD�B�&�r�FF���6F6��W'"���B�v��F�&�G�r����W$�D��� ��F�b6�73�&��F��&�G�#��F�b6�73�'7FFR�&��"7G��S�&6���#�f"���&B�#�)����G�W62�W'"��W76vR���'#��6���7G��S�&6���#�f"����WFVB���&v���F�����F�7���&��6�#���R7W&RF�RVFvRgV�7F����2WFFVB�B�D�$��5����U��26WB��7W&6R���6������F�c���F�c� ��f���ǒ���b�'F���'F��F�6&�VB�f�6P�'F��6�74Ɨ7B�&V��fR�v��F��rr���b�&6��F�6�WD�EҒ��'F��FW�D6��FV�B�	�8�f�Wr$4p�'F��6�74Ɨ7B�FB�v�2�&6r���V�6R��'F��FW�D6��FV�B�	�H��Ǘ�Rp�'F��6�74Ɨ7B�&V��fR�v�2�&6r��ТТЧР�7��2gV�7F���&V�Ǘ�UF�6�WB�F�6�WD�B���6��6T��F��v�B�Ǘ�UF�6�WB�F�6�WD�B�G'VR��Р�gV�7F���fEF�6�WEW&F�6�WD�B���&WGW&�dE�D������GG3���G�dE�D������g&W6�FW6��6����V�FW6��F�6�WG2�G�F�6�WD�G���V���Р�gV�7F���6��t��FF�6�WD�B�&�r���B�v�F�F�Rr��FW�D6��FV�B�$4(	BF�6�WB2G�F�6�WD�G� �B�v�7V"r��FW�D6��FV�B�&�r�7V&�V7B��G�&�r�vV�E���R��rw�+rG�f�DFFR�&�r�&W7��FVE�B�� �6��7BW&��fEF�6�WEW&F�6�WD�B��6��7B���B�v�fDƖ�r���b�W&����&Vb�W&ò���7G��R�F�7���v��Ɩ�R�f�W�rТV�6R����7G��R�F�7���v���RrР�B�v��F�&�G�r����W$�D��� ��F�b6�73�&��F��&�G�#��F�b6�73�'7FFR�&��#��F�b6�73�'7���W"#���F�c�fWF6���rF�6�WBf��6��fW'6F���2g&��g&W6�FW6���'#�F�V�'V���r��Ǘ6�>(
+`���F�c���F�c� �B�v�Ǘ�T��F�r��7G��R�F�7���vf�W�p�F�7V�V�B�&�G��7G��R��fW&f��r�v��FFV�p�Р�gV�7F���6��6T��F���B�v�Ǘ�T��F�r��7G��R�F�7���v���Rp�F�7V�V�B�&�G��7G��R��fW&f��r�rp�Р�gV�7F����fW&��6Ɩ6��R����b�R�F&vWB���B�v�Ǘ�T��F�r��6��6T��F��Р�F�7V�V�B�FDWfV�DƗ7FV�W"�v�W�F�v�r�R����b�R�W����tW66Rr�6��6T��F�Ґ��gV�7F���&V�FW$�Ǘ6�2�F�6�WD�B�&�r�FF���6��7B�FF��Ǘ6�2���Т6��7BW'"��6WGW�W'&� ��6��7B6Wd6�72��6WfW&�G����v��v�r�w6Wbֆ�v�r��6WfW&�G����v��rr�w6Wb���rr�w6Wb��VF�V�p�6��7B6Wd�&V���6WfW&�G��G��6WfW&�G��6�$B���F�WW$66R����6WfW&�G��6Ɩ6R���&��&�G��t�VF�V�&��&�G�p��6��7B&V6��4�D������76�&�U�&V6��2���Ғ���"���Ɠ�G�W62�"����Ɠ������rr��6��7B7VvvW7D�D������&�fV�V�E�7VvvW7F���2���Ғ���2���Ɠ�G�W62�2����Ɠ������rr���6��7B6���V�D�F���&�r�6���V�B� ��F�b6�73�&76B�6���V�B�&��#��F�b6�73�&76B�6���V�B��&V�#�*�7W7F��W"w254B6���V�C��F�c�"G�W62�&�r�6���V�B�� ���F�c��rp��6��7Bv&�F���W'"� ��F�b6�73�&����F�&��2�v&�#�)����G�W62�W'"���'#��6����FB�6�FS��D�$��5����U���6�FS�F�7W&6R(i"VFvRgV�7F���2(i"V�f�&���V�Bf&�&�W2f�"gV�����vW&VB$4���6������F�c��rp����6���V�B�Ǘ6�26V7F����6��v��b54B6���V�BW��7G3��"�b��6���V�B�6��w26��fW'6F����&6VB�Ǘ6�2��6��7B6���V�D�Ǘ6�4�F����7W7F��W%�6���V�E��Ǘ6�2bb�7W7F��W%�6���V�E��Ǘ6�2��t��(	B��6���V�B�VgB'�7W7F��W"p���F�b6�73�'&6�6V7F���6���V�B��Ǘ6�2#��F�b6�73�'&6��&V�#�	�*�v�BF�R7W7F��W"�V�C��F�c��F�b6�73�'&6�FW�B#�G�W62��7W7F��W%�6���V�E��Ǘ6�2����F�c���F�c��rp����vV�B&W7��6R7V��'�6V7F���6��7BvV�E7V��'��F����vV�E�&W7��6U�7V��'����F�b6�73�'&6�6V7F���vV�B�7V��'�#��F�b6�73�'&6��&V�#�	�y(�	�+�vV�B&W7��6R7V��'���F�c��F�b6�73�'&6�FW�B#�G�W62��vV�E�&W7��6U�7V��'�����F�c���F�c��rp����f��FW"v�F��Ǘ�VE�'���Ǘ�VE�B�&R��Ǘ�R'WGF��6��7B6fVD�&V��FF�6fVB�	�+�6fVBF�FF&6Rr�rp�6��7B�Ǘ�VD'��FF��Ǘ�VE�'���Ǘ�VB'��7G&��s�G�W62�FF��Ǘ�VE�'�����7G&��s��rp�6��7B�Ǘ�VDB�FF��Ǘ�VE�@����G��WrFFR�FF��Ǘ�VE�B��F���6�U7G&��r�vV��t"r��F��s"�F�v�Br����F��w6��'Br��V#�v�V�W&�2r���W#�s"�F�v�Br�֖�WFS�s"�F�v�Brҗ� ��rp�6��7Bf��FW$�F��� ��F�b6�73�'&6�f��FW"#��7��G��6fVD�&V���Ǘ�VD'���Ǘ�VDE��f��FW"�&���V�����rf�'7�+rf�'7�r����7���'WGF��6�73�&'F��&V�Ǘ�R"��6Ɩ6��'&V�Ǘ�UF�6�WB�G�F�6�WD�GҒ#�	�HB&R��Ǘ�S��'WGF�����F�c� ��B�v��F�&�G�r����W$�D��� ��F�b6�73�&��F��&�G�#�G�v&�F��ТG�6���V�D�F��Т�7�6�73�'6Wb�6��G�6Wd6�77�#�)�G�6Wd�&V����7�ࠢG�6���V�D�Ǘ6�4�F��Р��F�b6�73�'&6�6V7F���#��F�b6�73�'&6��&V�#�	�8�7W7F��W"w2VW'���F�c��F�b6�73�'&6�FW�B#�G�W62��W6W%�VW'���t6�V�B��BFWFW&֖�R�r����F�c���F�cࠢG�vV�E7V��'��F��Р��F�b6�73�'&6�6V7F���#��F�b6�73�'&6��&V�#�	�����vV�B7F���2F�V���F�c��F�b6�73�'&6�FW�B#�G�W62��vV�E�7F���2��t6�V�B��BFWFW&֖�R�r����F�c���F�cࠢ�F�b6�73�'&6�6V7F���#��F�b6�73�'&6��&V�#�	�*�vV�B&W7��6RVƗG���F�c��F�b6�73�'&6�FW�B#�G�W62��vV�E�&W7��6U�VƗG���t6�V�B��BFWFW&֖�R�r����F�c���F�cࠢ�F�b6�73�'&6�6V7F���&B�2#��F�b6�73�'&6��&V�#�)���76�&�R&V6��2f�"&B&F��s��F�c��V�6�73�'&6�Ɨ7B#�G�&V6��4�D����s�Ɠ�6�V�B��BFWFW&֖�S��Ɠ�w���V����F�cࠢ�F�b6�73�'&6�6V7F���v��B�2#��F�b6�73�'&6��&V�#�)�R��rF�&WfV�BF��2��gWGW&S��F�c��V�6�73�'&6�Ɨ7B#�G�7VvvW7D�D����s�Ɠ���7VvvW7F���2f��&�S��Ɠ�w���V����F�cࠢG�f��FW$�F��Т��F�c� �Р��)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y �$T�DU"���)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y��gV�7F���&V�FW$����6��7Bb�vWDf��FW&VB���WFFT��2�b��WFFUG&V�B�b��WFFT&"�v4w&�Wr�vw&�Wr�b�vw&�W���Rr�#��WFFT&"�v4vV�Br�vvV�Br�b�vvV�E���Rr�"��WFFUF&�R�b��Р�gV�7F���ǔf��FW'2���&V�FW$��ЦgV�7F���&W6WDf��FW'2�����DFFW2����B�vdw&�Wr��f�VS�rs�B�vdvV�Br��f�VS�rs�B�vd'&�Br��f�VS�rs�&V�FW$��Р��)H)HWF��VFW'2�V�W")H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H����F֖�W6W2��F֖��F��V��f��G27W&6R�uB&R�fƖFF������&VwV�"vV�G2W6RWF��&��F���&V&W"�7W&6R֧wC��gV�7F���WF��VFW'2�����b���vvVD��vV�B�&WGW&��Т�b���vvVD��vV�B�F��V����TDtU�4T5$UB������&F6�FVBF֖�6V�B����W�2&V&W"6�7W&6R76W2F�R&WVW7B�����W2��F֖��F��V�6��W"VFvRgV�7F���&V6�v�6W2F֖�&�f��VvW2�&WGW&���tWF��&��F���s�&V&W"G�4%��U����w��F֖��F��V�s�TDtU�4T5$U@�ТТ&WGW&��tWF��&��F���s�&V&W"G���vvVD��vV�B�F��V��ЧР��)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y �UD�(	27W&6RWF��V����77v�&B��)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y)Y���WB��vvVD��vV�B��V������B���R�V������F��2�&��R�F��V�Р��)H)H��v����F�)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H��gV�7F����V���v����F���B�v��v��V���r��f�VR�rp�B�v��v��77v�&Br��f�VR�rp�B�v��v��W'&�"r��7G��R�F�7���v���Rp�B�v��v��'F�r��F�6&�VB�f�6P�B�v��v��'F�r��FW�D6��FV�B�u6�v���p�B�v��v����F�r��7G��R�F�7���vf�W�p�F�7V�V�B�&�G��7G��R��fW&f��r�v��FFV�p�6WEF��V�WB�����B�v��v��V���r��f�7W2���S��Р�gV�7F���6��6T��v����F���B�v��v����F�r��7G��R�F�7���v���Rp�F�7V�V�B�&�G��7G��R��fW&f��r�rp�Р�gV�7F���6��t��v��W'&�"��6r���6��7BV��B�v��v��W'&�"r��V��FW�D6��FV�B��6p�V��7G��R�F�7���v&��6�p�Р�7��2gV�7F�����v��W6W"����6��7BV����B�v��v��V���r��f�VR�G&�҂��F���vW$66R���6��7B77v�&B�B�v��v��77v�&Br��f�VP��b�V���6��t��v��W'&�"�u�V6RV�FW"��W"V����r��&WGW&�Т�b�77v�&B��6��t��v��W'&�"�u�V6RV�FW"��W"77v�&B�r��&WGW&�Р�6��7B'F��B�v��v��'F�r��'F��F�6&�VB�G'VP�'F��FW�D6��FV�B�u6�v��r��(
+bp�B�v��v��W'&�"r��7G��R�F�7���v���Rp��G'�����)H)H�&F6�FVBF֖�6��'F7WB���7W&6RWF��VVFVB�)H)H)H)H)H)H)H)H)H)H ��b�V������DԔ��T���bb77v�&B���DԔ��r�����vvVD��vV�B����C�vF֖�ֆ&F6�FVBr����S�t�'VF�V�r��V��âDԔ��T�����&��S�vF֖�r��F��V�TDtU�4T5$UB����F��3�t�"p�Т6��6T��v����F��&V�FW$vV�D6�����&V�FW$���&WGW&�Р���)H)H&VwV�"vV�G2(	BW6R7W&6RWF�)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H �6��7B�FF�WF�FF�W'&�#�WF�W'"��v�B6"�WF��6�v��v�F�77v�&B��V����77v�&BҐ��b�WF�W'"�F�&�r�WrW'&�"�WF�W'"��W76vR���6��7BF��V��WF�FF�6W76�����66W75�F��V��b�F��V�F�&�r�WrW'&�"�t��6W76���F��V�&V6V�fVB�r�����fWF6�&�f��Rg&��F6�&�&E�W6W'0�6��7B�FF�&�f��R�W'&�#�&�dW'"��v�B6 ��g&�҂vF6�&�&E�W6W'2r���6V�V7B�v��R�&��Rr���W�v�Br�WF�FF�W6W"�B���6��v�R�����b�&�dW'"��&�f��R�F�&�r�WrW'&�"�t66�V�B��Bf�V�B��F6�&�&B�6��F7BF֖��r�����vvVD��vV�B����C�WF�FF�W6W"�B����S�&�f��R���R��V��âWF�FF�W6W"�V�����&��S�&�f��R�&��R��F��V�F��V�����F��3�&�f��R���R�7ƗB�rr����r��u�Ғ����rr��6Ɩ6R��"��F�WW$66R���Р�6��6T��v����F��&V�FW$vV�D6��������vV�G26VRF�V�"�v�F�6�WG2'�FVfV�@��b���vvVD��vV�B�&��R���vvV�Br���6��7B6V��B�vdvV�Br��6��7B�B�����6V���F���5��f��B������f�VR�����vvVD��vV�B���R���b��B�6V��f�VR���vvVD��vV�B���P�Р�&V�FW$�����6F6��W'"���6��t��v��W'&�"�W'"��W76vR��'F��F�6&�VB�f�6P�'F��FW�D6��FV�B�u6�v���p�ЧР�gV�7F���&V�FW$vV�D6�������b���vvVD��vV�B���B�v�VFW$��v��'F�r��7G��R�F�7���v���Rp�B�v�VFW$vV�D6��r��7G��R�F�7���vf�W�p�B�vvV�D��F��2r��FW�D6��FV�B���vvVD��vV�B��F��0�B�vvV�DF�7����Rr��FW�D6��FV�B���vvVD��vV�B���P�B�vvV�DF�7��V���r��FW�D6��FV�B���vvVD��vV�B�V������6��rvV"�6����ǒf�"F֖�0�B�vF֖�vV$'F�r��7G��R�F�7�����vvVD��vV�B�&��R���vF֖�r�v��Ɩ�Rr�v���Rp��V�6R��B�v�VFW$��v��'F�r��7G��R�F�7���vf�W�p�B�v�VFW$vV�D6��r��7G��R�F�7���v���Rp�ЧР�7��2gV�7F�����v�WB����v�B6"�WF��6�v��WB�����vvVD��vV�B��V���B�vdvV�Br��f�VR�rp�&V�FW$vV�D6�����&V�FW$���Р��)H)Hf�'7B�F��R6WGW��F�)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H��7��2gV�7F���6�V6�6WGW����G'���6��7B&�2��WrU$�6V&6�&�2��7F���v6�V6��6WGWrҐ�6��7B&W2�v�BfWF6��G�TDtU�U$���G�&�7�����VFW'3��w��7&���6V7&WBs�TDtU�4T5$UBТҐ�6��7BFF�v�B&W2�6�ₐ��b�FF�6WGW��VVFVB���B�w6WGW��F�r��7G��R�F�7���vf�W�p�F�7V�V�B�&�G��7G��R��fW&f��r�v��FFV�p�6WEF��V�WB�����B�w6WGW77v�&Br��f�7W2���S��Т�6F6�����6��V�Fǒ6���bVFvRf�V�&V6�&�R��ЧР�7��2gV�7F���6WGWF֖ₒ��6��7Br�B�w6WGW77v�&Br��f�VP�6��7Bs"�B�w6WGW77v�&C"r��f�VP�6��7BW'$V��B�w6WGWW'&�"r���b�r��r��V�wF�����W'$V��FW�D6��FV�B�u77v�&B�W7B&RB�V7B�6�&7FW'2�s�W'$V��7G��R�F�7���v&��6�s�&WGW&�Т�b�r��s"��W'$V��FW�D6��FV�B�u77v�&G2F���B�F6��s�W'$V��7G��R�F�7���v&��6�s�&WGW&�Р�6��7B'F��B�w6WGW'F�r��'F��F�6&�VB�G'VP�'F��FW�D6��FV�B�t7&VF��rF֖�66�V�N(
+bp�W'$V��7G��R�F�7���v���Rp��G'���6��7B&�2��WrU$�6V&6�&�2��7F���w6WGWr�77v�&C�rҐ�6��7B&W2�v�BfWF6��G�TDtU�U$���G�&�7�����WF��C�u�5Br���VFW'3��w��7&���6V7&WBs�TDtU�4T5$UB�t6��FV�B�G�Rs�vƖ6F�����6��rТҐ�6��7BFF�v�B&W2�6�ₐ��b�&W2�����FF�W'&�"�F�&�r�WrW'&�"�FF�W'&�"��u6WGWf��VB�r���B�w6WGW��F�r��7G��R�F�7���v���Rp�F�7V�V�B�&�G��7G��R��fW&f��r�rp���&R�f�����v����F�v�F�F֖�V�����V���v����F��B�v��v��V���r��f�VR�v�'VF�V�v�w&�V�B�6��p�6WEF��V�WB�����B�v��v��77v�&Br��f�7W2���c���6F6��W'"���W'$V��FW�D6��FV�B�W'"��W76vP�W'$V��7G��R�F�7���v&��6�p�'F��F�6&�VB�f�6P�'F��FW�D6��FV�B�t7&VFRF֖�66�V�Bp�ЧР��)H)HF֖��V���F�)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H��7��2gV�7F����V�F֖��V���B�vF֖��6rr��7G��R�F�7���v���Rp�B�vF֖�W'"r��7G��R�F�7���v���Rp�B�v�WtvV�D��Rr��f�VR�rp�B�v�WtvV�DV���r��f�VR�rp�B�v�WtvV�E77v�&Br��f�VR�rp�B�vF֖��V���F�r��7G��R�F�7���vf�W�p�F�7V�V�B�&�G��7G��R��fW&f��r�v��FFV�p�v�B��DvV�DƗ7B���Р�gV�7F���6��6TF֖��V���B�vF֖��V���F�r��7G��R�F�7���v���Rp�F�7V�V�B�&�G��7G��R��fW&f��r�rp�Р�7��2gV�7F�����DvV�DƗ7B����6��7Bw&�B�vvV�DƗ7Ew&r��w&���W$�D���s�F�b6�73�&vV�G2���F��r#���F��r66�V�G>(
+c��F�c�p�G'���6��7B&�2��WrU$�6V&6�&�2��7F���vƗ7E�vV�G2rҐ�6��7B&W2�v�BfWF6��G�TDtU�U$���G�&�7�����VFW'3�����WF��VFW'2��ТҐ�6��7BFF�v�B&W2�6�ₐ��b�&W2�����FF�W'&�"�F�&�r�WrW'&�"�FF�W'&�"��t6�V�B��B��BvV�G2�r���6��7BvV�G2�FF�vV�G2���Т�b�vV�G2��V�wF���w&���W$�D���s�F�b6�73�&vV�G2���F��r#���66�V�G2�WB���F�c�s�&WGW&�Р�w&���W$�D����V�6�73�&vV�B�Ɨ7B#�G�vV�G2�������6��7B��F��2����R�7ƗB�rr����s��u�Ғ����rr��6Ɩ6R��"��F�WW$66R���6��7B�4F֖���&��R���vF֖�p�&WGW&��ƒ6�73�&vV�B�Ɨ7B֗FV�#��F�b6�73�&vV�B�Ɨ7B֖�f�#��F�b6�73�&vV�B�Ɨ7B�fF"#�G���F��7���F�c��F�c��F�b6�73�&vV�B�Ɨ7B���R#�G�W62����R����F�c��F�b6�73�&vV�B�Ɨ7B�V���#�G�W62��V�����F�c���F�c��7�6�73�&vV�B�Ɨ7B�&��RG��4F֖��w&��R�F֖�s�w&��R�vV�Bw�#�G��&��W���7����F�c�G��4F֖��rr��'WGF��6�73�&'F��FV�WFR�vV�B"��6Ɩ6��&FV�WFTvV�B�rG��G�r�rG�W62����R��r�#�&V��fS��'WGF���Т��Ɠ� �Ғ����rr����V�� ��6F6��W'"���w&���W$�D����F�b7G��S�&6���#�f"���&B��f��B�6��S�7�#�G�W62�W'"��W76vR����F�c� �ЧР�7��2gV�7F���7&VFTvV�B����6��7B��R�B�v�WtvV�D��Rr��f�VR�G&�҂��6��7BV����B�v�WtvV�DV���r��f�VR�G&�҂��F���vW$66R���6��7B77v�&B�B�v�WtvV�E77v�&Br��f�VP�6��7BW'$V��B�vF֖�W'"r��6��7B�6tV��B�vF֖��6rr���W'$V��7G��R�F�7���v���Rp��6tV��7G��R�F�7���v���Rp���b���R��W'$V��FW�D6��FV�C�t��R�2&WV�&VB�s�W'$V��7G��R�F�7���v&��6�s�&WGW&�Т�b�V���W'$V��FW�D6��FV�C�tV����2&WV�&VB�s�W'$V��7G��R�F�7���v&��6�s�&WGW&�Т�b�77v�&B��77v�&B��V�wF�����W'$V��FW�D6��FV�C�u77v�&B�W7B&RB�V7B�6�&7FW'2�s�W'$V��7G��R�F�7���v&��6�s�&WGW&�Р�6��7B'F��B�v7&VFTvV�D'F�r��'F��F�6&�VB�G'VP�'F��FW�D6��FV�B�t7&VF��~(
+bp��G'���6��7B&�2��WrU$�6V&6�&�2��7F���v7&VFU�vV�Br���R�V����77v�&BҐ�6��7B&W2�v�BfWF6��G�TDtU�U$���G�&�7�����WF��C�u�5Br���VFW'3�����WF��VFW'2��ТҐ��WBFF��ТG'��FF�v�B&W2�6�ₒ�6F6����Т�b�&W2�����FF�W'&�"�F�&�r�WrW'&�"�FF�W'&�"��6W'fW"W'&�"G�&W2�7FGW7�(	B&VFW���F�RVFvRgV�7F�������B�v�WtvV�D��Rr��f�VR�rp�B�v�WtvV�DV���r��f�VR�rp�B�v�WtvV�E77v�&Br��f�VR�rp��6tV��FW�D6��FV�B�)�RvV�B"G���W�"7&VFVB7V66W76gV�ǒ� ��6tV��7G��R�F�7���v&��6�p�v�B��DvV�DƗ7B����6F6��W'"���W'$V��FW�D6��FV�B�W'"��W76vP�W'$V��7G��R�F�7���v&��6�p��f���ǒ��'F��F�6&�VB�f�6P�'F��FW�D6��FV�B�tFBvV�Bp�ЧР�7��2gV�7F���FV�WFTvV�B�vV�D�B���R����b�6��f�&҆&V��fRvV�B"G���W�#�F�W�v��������vW"&R&�RF���r�����&WGW&�6��7BW'$V��B�vF֖�W'"r��6��7B�6tV��B�vF֖��6rr��W'$V��7G��R�F�7���v���Rp��6tV��7G��R�F�7���v���Rp��G'���6��7B&�2��WrU$�6V&6�&�2��7F���vFV�WFU�vV�Br�vV�E��C�vV�D�BҐ�6��7B&W2�v�BfWF6��G�TDtU�U$���G�&�7�����WF��C�u�5Br���VFW'3�����WF��VFW'2��ТҐ�6��7BFF�v�B&W2�6�ₐ��b�&W2�����FF�W'&�"�F�&�r�WrW'&�"�FF�W'&�"��tf��VBF�&V��fRvV�B�r����6tV��FW�D6��FV�B�)�RvV�B"G���W�"&V��fVB� ��6tV��7G��R�F�7���v&��6�p�v�B��DvV�DƗ7B����6F6��W'"���W'$V��FW�D6��FV�B�W'"��W76vP�W'$V��7G��R�F�7���v&��6�p�ЧР��)H)H&��B)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H)H��7��2gV�7F�����B������DFFW2�������v�BfWF6����6��7B��r��WrFFR���B�v�7E7��2r��FW�D6��FV�B�WFFVBG���r�F���6�UF��U7G&��r��� �B�w&V4�WFr��FW�D6��FV�B�+rG�����V�wF��F���6�U7G&��r���&V6�&G6 ��V�FTG&�F�v�2���&V�FW$���Р���B�����67&�C���&�G�����F���
