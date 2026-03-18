@@ -410,6 +410,42 @@
     .admin-close-row { text-align: right; margin-top: 16px; }
     .agents-loading { font-size: 13px; color: var(--muted); padding: 12px 0; }
 
+    /* -- MANAGE MEMBERS BUTTON ------------------------------------- */
+    .btn-manage-members {
+      background: var(--primary-lt); color: var(--primary);
+      border: 1.5px solid #c7d2fe; border-radius: 8px;
+      padding: 6px 14px; font-size: 13px; font-weight: 600;
+      cursor: pointer; display: none; align-items: center; gap: 6px;
+      transition: all .15s;
+    }
+    .btn-manage-members:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* -- FORGOT PASSWORD ------------------------------------------- */
+    .forgot-pw-link {
+      display: block; text-align: right; font-size: 12px; color: var(--primary);
+      cursor: pointer; margin-top: -10px; margin-bottom: 16px;
+      background: none; border: none; padding: 0; text-decoration: none;
+    }
+    .forgot-pw-link:hover { text-decoration: underline; }
+    .forgot-success {
+      background: var(--good-bg); color: var(--good); border-radius: 8px;
+      padding: 10px 14px; font-size: 13px; margin-bottom: 14px; display: none;
+    }
+
+    /* -- RESET PW BUTTON IN MEMBER LIST ---------------------------- */
+    .btn-reset-pw {
+      background: none; border: 1.5px solid var(--border); border-radius: 6px;
+      padding: 4px 10px; font-size: 12px; color: var(--muted); cursor: pointer;
+      margin-right: 6px; transition: all .15s;
+    }
+    .btn-reset-pw:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-lt); }
+
+    /* -- RESET PW ADMIN MODAL -------------------------------------- */
+    .reset-pw-box {
+      background: white; border-radius: 16px; width: 100%; max-width: 400px;
+      box-shadow: 0 25px 60px rgba(0,0,0,.28); animation: mIn .2s ease; overflow: hidden;
+    }
+
     /* -- RESPONSIVE ------------------------------------------------ */
     @media(max-width:1100px){ .charts-grid{grid-template-columns:1fr 1fr} .charts-grid .chart-card:first-child{grid-column:1/-1} }
     @media(max-width:760px){ .page{padding:16px} .header{padding:0 16px} .kpi-row{grid-template-columns:1fr 1fr} .charts-grid{grid-template-columns:1fr} }
@@ -433,6 +469,11 @@
       ? Agent Login
     </button>
 
+    <!-- Admin-only Manage Members button (shown next to chip when admin is logged in) -->
+    <button class="btn-manage-members" id="manageMembersBtn" onclick="openAdminPanel()">
+      ?? Manage Members
+    </button>
+
     <!-- Logged-in state (hidden until login) -->
     <div class="agent-chip" id="headerAgentChip" style="display:none">
       <div class="agent-avatar" id="agentInitials">?</div>
@@ -440,8 +481,6 @@
         <div class="agent-name"  id="agentDisplayName"></div>
         <div class="agent-email" id="agentDisplayEmail"></div>
       </div>
-      <!-- Admin-only gear icon -->
-      <button class="btn-admin-gear" id="adminGearBtn" onclick="openAdminPanel()" title="Manage Agents" style="display:none">??</button>
       <button class="btn-logout" onclick="logout()" title="Log out">?</button>
     </div>
   </div>
@@ -498,7 +537,7 @@
   <!-- Charts -->
   <div class="charts-grid">
     <div class="chart-card">
-      <div class="chart-head">CSAT Trend <small>Weekly CSAT % &amp; volume</small></div>
+      <div class="chart-head">CSAT Trend <small>Weekly CSAT5 &amp; volume</small></div>
       <canvas id="cTrend" height="160"></canvas>
     </div>
     <div class="chart-card">
@@ -534,17 +573,35 @@
       <div class="login-head-sub">Sign in with your dashboard account</div>
     </div>
     <div class="login-form">
-      <div id="loginError" class="login-error"></div>
-      <label class="lf-label" for="loginEmail">Email</label>
-      <input class="lf-input" type="email" id="loginEmail"
-        placeholder="you@yourcompany.com"
-        onkeydown="if(event.key==='Enter') document.getElementById('loginPassword').focus()" />
-      <label class="lf-label" for="loginPassword">Password</label>
-      <input class="lf-input" type="password" id="loginPassword"
-        placeholder="********"
-        onkeydown="if(event.key==='Enter') loginUser()" />
-      <button class="btn-login-submit" id="loginBtn" onclick="loginUser()">Sign In</button>
-      <button class="login-cancel" onclick="closeLoginModal()">Cancel</button>
+
+      <!-- === SICN--IN VIEW === -->
+      <div id="loginView">
+        <div id="loginError" class="login-error"></div>
+        <label class="lf-label" for="loginEmail">Email</label>
+        <input class="lf-input" type="email" id="loginEmail"
+          placeholder="you@yourcompany.com"
+          onkeydown="if(event.key==='Enter') document.getElementById('loginPassword').focus()" />
+        <label class="lf-label" for="loginPassword">Password</label>
+        <input class="lf-input" type="password" id="loginPassword"
+          placeholder="********"
+          onkeydown="if(event.key==='Enter') loginUser()" />
+        <button class="forgot-pw-link" onclick="showForgotView()">Forgot Password?</button>
+        <button class="btn-login-submit" id="loginBtn" onclick="loginUser()">Sign In</button>
+        <button class="login-cancel" onclick="closeLoginModal()">Cancel</button>
+      </div>
+
+      <!-- === FORGOT PASSWORD VIEW === -->
+      <div id="forgotView" style="display:none">
+        <div id="forgotError" class="login-error"></div>
+        <div id="forgotSuccess" class="forgot-success"></div>
+        <label class="lf-label" for="forgotEmail">Your Email Address</label>
+        <input class="lf-input" type="email" id="forgotEmail"
+          placeholder="you@yourcompany.com"
+          onkeydown="if(event.key==='Enter') sendPasswordReset()" />
+        <button class="btn-login-submit" id="forgotBtn" onclick="sendPasswordReset()">Send Reset Link</button>
+        <button class="login-cancel" onclick="hideForgotView()">? Back to Login</button>
+      </div>
+
     </div>
   </div>
 </div>
@@ -578,16 +635,16 @@
     <div class="admin-head">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div>
-          <div class="admin-head-title">?? Manage Agents</div>
-          <div class="admin-head-sub">Add or remove dashboard accounts</div>
+          <div class="admin-head-title">?? Manage Members</div>
+          <div class="admin-head-sub">Add, view, or remove dashboard members</div>
         </div>
         <button style="background:none;border:none;cursor:pointer;color:white;font-size:20px;line-height:1;padding:2px 4px;" onclick="closeAdminPanel()">?</button>
       </div>
     </div>
     <div class="admin-body">
 
-      <!-- Current agents list -->
-      <div class="admin-section-title">Current Accounts</div>
+      <!-- Current members list -->
+      <div class="admin-section-title">Current Members</div>
       <div id="agentListWrap"><div class="agents-loading">Loading...</div></div>
 
       <div id="adminMsg" class="admin-success"></div>
@@ -595,7 +652,7 @@
 
       <!-- Create agent form -->
       <div class="create-agent-form">
-        <div class="create-form-title">? Add New Agent</div>
+        <div class="create-form-title">? Add New Member</div>
         <div class="form-row">
           <div class="fg">
             <label class="lf-label">Full Name</label>
@@ -610,12 +667,38 @@
           <label class="lf-label">Password</label>
           <input class="lf-input" type="password" id="newAgentPassword" placeholder="Min 8 characters" style="margin-bottom:0" />
         </div>
-        <button class="btn-primary" id="createAgentBtn" onclick="createAgent()" style="width:100%;padding:10px">Add Agent</button>
+        <button class="btn-primary" id="createAgentBtn" onclick="createAgent()" style="width:100%;padding:10px">Add Member</button>
       </div>
 
       <div class="admin-close-row">
         <button class="btn-ghost" onclick="closeAdminPanel()">Close</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- -- ADMIN RESET PASSWORD MODAL ------------------------------------- -->
+<div class="login-overlay" id="resetPwModal" style="display:none">
+  <div class="reset-pw-box">
+    <div class="login-head">
+      <div class="login-head-icon">?</div>
+      <div class="login-head-title">Reset Member Password</div>
+      <div class="login-head-sub" id="resetPwSubtitle">Set a new password for this member</div>
+    </div>
+    <div class="login-form">
+      <div id="resetPwError" class="login-error"></div>
+      <div id="resetPwSuccess" class="forgot-success"></div>
+      <input type="hidden" id="resetPwAgentId" />
+      <label class="lf-label" for="resetPwNew">New Password</label>
+      <input class="lf-input" type="password" id="resetPwNew"
+        placeholder="Min 8 characters"
+        onkeydown="if(event.key==='Enter') document.getElementById('resetPwConfirm').focus()" />
+      <label class="lf-label" for="resetPwConfirm">Confirm New Password</label>
+      <input class="lf-input" type="password" id="resetPwConfirm"
+        placeholder="Repeat password"
+        onkeydown="if(event.key==='Enter') confirmAdminResetPw()" />
+      <button class="btn-login-submit" id="resetPwBtn" onclick="confirmAdminResetPw()">Reset Password</button>
+      <button class="login-cancel" onclick="closeResetPwModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -1155,8 +1238,11 @@ function openLoginModal() {
   $('loginEmail').value    = ''
   $('loginPassword').value = ''
   $('loginError').style.display = 'none'
-  $('loginBtn').disabled   = false
+  $('loginBtn&).disabled   = false
   $('loginBtn').textContent = 'Sign In'
+  // Always start on sign-in view
+  $('loginView').style.display  = 'block'
+  $('forgotView').style.display = 'none'
   $('loginModal').style.display = 'flex'
   document.body.style.overflow = 'hidden'
   setTimeout(() => $('loginEmail').focus(), 50)
@@ -1165,6 +1251,9 @@ function openLoginModal() {
 function closeLoginModal() {
   $('loginModal').style.display = 'none'
   document.body.style.overflow = ''
+  // Reset back to login view for next open
+  $('loginView').style.display  = 'block'
+  $('forgotView').style.display = 'none'
 }
 
 function showLoginError(msg) {
@@ -1247,18 +1336,20 @@ async function loginUser() {
 
 function renderAgentChip() {
   if (loggedInAgent) {
-    $('headerLoginBtn').style.display  = 'none'
-    $('headerAgentChip').style.display = 'flex'
-    $('agentInitials').textContent     = loggedInAgent.initials
-    $('agentDisplayName').textContent  = loggedInAgent.name
-    $('agentDisplayEmail').textContent = loggedInAgent.email
-    // Show gear icon only for admins
-    $('adminGearBtn').style.display = logedInAgent.role === 'admin' ? 'inline' : 'none'
+    $('headerLoginBtn').style.display      = 'none'
+    $('headerAgentChip').style.display     = 'flex'
+    $('agentInitials').textContent         = loggedInAgent.initials
+    $('agentDisplayName').textContent      = loggedInAgent.name
+    $('agentDisplayEmail').textContent     = loggedInAgent.email
+    // Show Manage Members button only for admins
+    $('manageMembersBtn').style.display    = loggedInAgent.role === 'admin' ? 'flex' : 'none'
   } else {
-    $('headerLoginBtn').style.display  = 'flex'
-    $('headerAgentChip').style.display = 'none'
+    $('headerLoginBtn').style.display      = 'flex'
+    $('headerAgentChip').style.display     = 'none'
+    $('manageMembersBtn').style.display    = 'none'
   }
 }
+
 async function logout() {
   await sb.auth.signOut()
   loggedInAgent = null
@@ -1361,7 +1452,10 @@ async function loadAgentList() {
           </div>
           <span class="agent-list-role ${isAdmin?'role-admin':'role-agent'}">${a.role}</span>
         </div>
-        ${isAdmin ? '' : `<button class="btn-delete-agent" onclick="deleteAgent('${a.id}','${esc(a.name)}')">Remove</button>`}
+        <div style="display:flex;align-items:center;gap:6px">
+          <button class="btn-reset-pw" onclick="openResetPwModal('${a.id}','${esc(a.name)}','${esc(a.email)}')" title="Reset password">? Reset PW</button>
+          ${isAdmin ? '' : `<button class="btn-delete-agent" onclick="deleteAgent('${a.id}','${esc(a.name)}')">Remove</button>`}
+        </div>
       </li>`
     }).join('')}</ul>`
   } catch (err) {
@@ -1400,7 +1494,7 @@ async function createAgent() {
     $('newAgentName').value     = ''
     $('newAgentEmail').value    = ''
     $('newAgentPassword').value = ''
-    msgEl.textContent = `? Agent "${name}" created successfully.`
+    msgEl.textContent = `? Member "${name}" added successfully.`
     msgEl.style.display = 'block'
     await loadAgentList()
   } catch (err) {
@@ -1408,7 +1502,7 @@ async function createAgent() {
     errEl.style.display = 'block'
   } finally {
     btn.disabled = false
-    btn.textContent = 'Add Agent'
+    btn.textContent = 'Add Member'
   }
 }
 
@@ -1434,6 +1528,134 @@ async function deleteAgent(agentId, name) {
   } catch (err) {
     errEl.textContent = err.message
     errEl.style.display = 'block'
+  }
+}
+
+/* ====================================================================
+   FORGOT PASSWORD
+   ==================================================================== */
+function showForgotView() {
+  $('loginView').style.display   = 'none'
+  $('forgotView').style.display  = 'block'
+  // Pre-fill email from login field if already typed
+  $('forgotEmail').value         = $('loginEmail').value.trim()
+  $('forgotError').style.display   = 'none'
+  $('forgotSuccess').style.display = 'none'
+  setTimeout(() => $('forgotEmail').focus(), 50)
+}
+
+function hideForgotView() {
+  $('forgotView').style.display  = 'none'
+  $('loginView').style.display   = 'block'
+}
+
+async function sendPasswordReset() {
+  const email   = $('forgotEmail').value.trim().toLowerCase()
+  const errEl   = $('forgotError')
+  const okEl    = $('forgotSuccess')
+  errEl.style.display = 'none'
+  okEl.style.display  = 'none'
+
+  if (!email) {
+    errEl.textContent = 'Please enter your email address.'
+    errEl.style.display = 'block'
+    return
+  }
+
+  // Admin account is hardcoded -- cannot use email reset
+  if (email === ADMIN_EMAIL) {
+    errEl.textContent = 'Admin password is managed by the system. Please use your configured credentials.'
+    errEl.style.display = 'block'
+    return
+  }
+
+  const btn = $('forgotBtn')
+  btn.disabled    = true
+  btn.textContent = 'Sending...'
+
+  try {
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + window.location.pathname
+    })
+    if (error) throw error
+    okEl.textContent    = '? Reset link sent! Check your email inbox and follow the link to set a new password.'
+    okEl.style.display  = 'block'
+  } catch (err) {
+    errEl.textContent   = err.message || 'Failed to send reset email. Please try again.'
+    errEl.style.display = 'block'
+  } finally {
+    btn.disabled    = false
+    btn.textContent = 'Send Reset Link'
+  }
+}
+
+/* ====================================================================
+   ADMIN ? RESET MEMBER PASSWORD
+   ==================================================================== */
+function openResetPwModal(agentId, agentName, agentEmail) {
+  $('resetPwAgentId').value        = agentId
+  $('resetPwSubtitle').textContent = `Set new password for ${agentName} (${agentEmail})`
+  $('resetPwNew').value            = ''
+  $('resetPwConfirm').value        = ''
+  $('resetPwError').style.display   = 'none'
+  $('resetPwSuccess').style.display = 'none'
+  $('resetPwBtn').disabled          = false
+  $('resetPwBtn').textContent       = 'Reset Password'
+  $('resetPwModal').style.display   = 'flex'
+  document.body.style.overflow      = 'hidden'
+  setTimeout(() => $('resetPwNew').focus(), 50)
+}
+
+function closeResetPwModal() {
+  $('resetPwModal').style.display = 'none'
+  document.body.style.overflow    = ''
+}
+
+async function confirmAdminResetPw() {
+  const agentId = $('resetPwAgentId').value
+  const newPw   = $('resetPwNew').value
+  const confPw  = $('resetPwConfirm').value
+  const errEl   = $('resetPwError')
+  const okEl    = $('resetPwSuccess')
+
+  errEl.style.display = 'none'
+  okEl.style.display  = 'none'
+
+  if (!newPw || newPw.length < 8) {
+    errEl.textContent   = 'Password must be at least 8 characters.'
+    errEl.style.display = 'block'
+    return
+  }
+  if (newPw !== confPw) {
+    errEl.textContent   = 'Passwords do not match.'
+    errEl.style.display = 'block'
+    return
+  }
+
+  const btn = $('resetPwBtn')
+  btn.disabled    = true
+  btn.textContent = 'Resetting...'
+
+  try {
+    const params = new URLSearchParams({ action: 'reset_member_password', agent_id: agentId, new_password: newPw })
+    const res    = await fetch(`${EDGE_URL}?${params}`, {
+      method: 'POST',
+      headers: { ...authHeaders() }
+    })
+    let data = {}
+    try { data = await res.json() } catch(_) {}
+    if (!res.ok || data.error) throw new Error(data.error || `Server error ${res.status}`)
+
+    okEl.textContent   = '? Password reset successfully.'
+    okEl.style.display = 'block'
+    $('resetPwNew').value    = ''
+    $('resetPwConfirm').value = ''
+  } catch (err) {
+    errEl.textContent   = err.message
+    errEl.style.display = 'block'
+  } finally {
+    btn.disabled    = false
+    btn.textContent = 'Reset Password'
   }
 }
 
