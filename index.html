@@ -8,7 +8,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
       --bg:          #f0f2f6;
       --card:        #ffffff;
@@ -1238,7 +1237,7 @@ function openLoginModal() {
   $('loginEmail').value    = ''
   $('loginPassword').value = ''
   $('loginError').style.display = 'none'
-  $('loginBtn&).disabled   = false
+  $('loginBtn').disabled   = false
   $('loginBtn').textContent = 'Sign In'
   // Always start on sign-in view
   $('loginView').style.display  = 'block'
