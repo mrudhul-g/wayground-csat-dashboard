@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
       --bg:          #f0f2f6;
       --card:        #ffffff;
@@ -242,7 +243,7 @@
     .rca-section.bad-s  .rca-list li::before { content: '*'; color: var(--bad); }
     .rca-section.good-s { background: #f0fdf4; }
     .rca-section.good-s .rca-label { color: var(--good); }
-    .rca-section.good-s .rca-list li::before { content: '?'; color: var(--good); }
+    .rca-section.good-s .rca-list li::before { content: '\2022'; color: var(--good); }
     .sev-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
     .sev-high   { background: var(--bad-bg);  color: var(--bad);  }
     .sev-medium { background: var(--warn-bg); color: var(--warn); }
@@ -456,7 +457,7 @@
 <!-- -- HEADER -------------------------------------------------------- -->
 <header class="header">
   <div class="header-left">
-    <div class="hicon">?</div>
+    <div class="hicon"></div>
     <div class="htitle">CSAT Dashboard <small id="recMeta"></small></div>
   </div>
   <div style="display:flex;align-items:center;gap:12px">
@@ -465,22 +466,22 @@
 
     <!-- Logged-out state -->
     <button class="btn-login" id="headerLoginBtn" onclick="openLoginModal()">
-      ? Agent Login
+      Agent Login
     </button>
 
     <!-- Admin-only Manage Members button (shown next to chip when admin is logged in) -->
     <button class="btn-manage-members" id="manageMembersBtn" onclick="openAdminPanel()">
-      ?? Manage Members
+      Manage Members
     </button>
 
     <!-- Logged-in state (hidden until login) -->
     <div class="agent-chip" id="headerAgentChip" style="display:none">
-      <div class="agent-avatar" id="agentInitials">?</div>
+      <div class="agent-avatar" id="agentInitials"></div>
       <div>
         <div class="agent-name"  id="agentDisplayName"></div>
         <div class="agent-email" id="agentDisplayEmail"></div>
       </div>
-      <button class="btn-logout" onclick="logout()" title="Log out">?</button>
+      <button class="btn-logout" onclick="logout()" title="Log out">&#x2715;</button>
     </div>
   </div>
 </header>
@@ -513,22 +514,22 @@
   <div class="kpi-row">
     <div class="kpi-card c-csat" id="cardCsat">
       <div class="kpi-label">CSAT Score</div>
-      <div class="kpi-value" id="kCsat">?</div>
+      <div class="kpi-value" id="kCsat">--</div>
       <div class="kpi-sub">Good / Total rated</div>
     </div>
     <div class="kpi-card c-total">
       <div class="kpi-label">Rated Surveys</div>
-      <div class="kpi-value" id="kTotal">?</div>
+      <div class="kpi-value" id="kTotal">--</div>
       <div class="kpi-sub">Total responses</div>
     </div>
     <div class="kpi-card c-good">
       <div class="kpi-label">Good Ratings</div>
-      <div class="kpi-value" id="kGood">?</div>
+      <div class="kpi-value" id="kGood">--</div>
       <div class="kpi-sub">Satisfied customers</div>
     </div>
     <div class="kpi-card c-bad">
       <div class="kpi-label">Bad Ratings</div>
-      <div class="kpi-value" id="kBad">?</div>
+      <div class="kpi-value" id="kBad">--</div>
       <div class="kpi-sub">Needs attention</div>
     </div>
   </div>
@@ -536,7 +537,7 @@
   <!-- Charts -->
   <div class="charts-grid">
     <div class="chart-card">
-      <div class="chart-head">CSAT Trend <small>Weekly CSAT5 &amp; volume</small></div>
+      <div class="chart-head">CSAT Trend <small>Weekly CSAT % &amp; volume</small></div>
       <canvas id="cTrend" height="160"></canvas>
     </div>
     <div class="chart-card">
@@ -551,7 +552,7 @@
 
   <!-- Bad Tickets Table -->
   <div class="section-head">
-    <span class="section-title">? Bad-Rated Tickets</span>
+    <span class="section-title">Bad-Rated Tickets</span>
     <span class="badge-count" id="badBadge">0</span>
   </div>
   <div class="table-card">
@@ -567,13 +568,13 @@
 <div class="login-overlay" id="loginModal" style="display:none">
   <div class="login-box">
     <div class="login-head">
-      <div class="login-head-icon">?</div>
+      <div class="login-head-icon"></div>
       <div class="login-head-title">CSAT Dashboard Login</div>
       <div class="login-head-sub">Sign in with your dashboard account</div>
     </div>
     <div class="login-form">
 
-      <!-- === SICN--IN VIEW === -->
+      <!-- === SIGN-IN VIEW === -->
       <div id="loginView">
         <div id="loginError" class="login-error"></div>
         <label class="lf-label" for="loginEmail">Email</label>
@@ -598,7 +599,7 @@
           placeholder="you@yourcompany.com"
           onkeydown="if(event.key==='Enter') sendPasswordReset()" />
         <button class="btn-login-submit" id="forgotBtn" onclick="sendPasswordReset()">Send Reset Link</button>
-        <button class="login-cancel" onclick="hideForgotView()">? Back to Login</button>
+        <button class="login-cancel" onclick="hideForgotView()">&#8592; Back to Login</button>
       </div>
 
     </div>
@@ -609,7 +610,7 @@
 <div class="login-overlay" id="setupModal" style="display:none">
   <div class="setup-box">
     <div class="login-head">
-      <div class="login-head-icon">?</div>
+      <div class="login-head-icon"></div>
       <div class="login-head-title">Welcome! Set Admin Password</div>
       <div class="login-head-sub">Create a password for mrudhul@wayground.com</div>
     </div>
@@ -634,10 +635,10 @@
     <div class="admin-head">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div>
-          <div class="admin-head-title">?? Manage Members</div>
+          <div class="admin-head-title">Manage Members</div>
           <div class="admin-head-sub">Add, view, or remove dashboard members</div>
         </div>
-        <button style="background:none;border:none;cursor:pointer;color:white;font-size:20px;line-height:1;padding:2px 4px;" onclick="closeAdminPanel()">?</button>
+        <button style="background:none;border:none;cursor:pointer;color:white;font-size:20px;line-height:1;padding:2px 4px;" onclick="closeAdminPanel()">&#x2715;</button>
       </div>
     </div>
     <div class="admin-body">
@@ -651,7 +652,7 @@
 
       <!-- Create agent form -->
       <div class="create-agent-form">
-        <div class="create-form-title">? Add New Member</div>
+        <div class="create-form-title">Add New Member</div>
         <div class="form-row">
           <div class="fg">
             <label class="lf-label">Full Name</label>
@@ -680,7 +681,7 @@
 <div class="login-overlay" id="resetPwModal" style="display:none">
   <div class="reset-pw-box">
     <div class="login-head">
-      <div class="login-head-icon">?</div>
+      <div class="login-head-icon"></div>
       <div class="login-head-title">Reset Member Password</div>
       <div class="login-head-sub" id="resetPwSubtitle">Set a new password for this member</div>
     </div>
@@ -710,10 +711,10 @@
         <div class="modal-title" id="mTitle">Ticket Analysis</div>
         <div class="modal-sub"   id="mSub"></div>
         <a class="modal-fd-link" id="mFdLink" href="#" target="_blank" rel="noopener" style="display:none">
-          Open in Freshdesk ?
+          Open in Freshdesk
         </a>
       </div>
-      <button class="modal-close" onclick="closeModal()">?</button>
+      <button class="modal-close" onclick="closeModal()">&#x2715;</button>
     </div>
     <div id="modalBody"></div>
   </div>
@@ -865,7 +866,7 @@ function updateTrend(data) {
       plugins:{ legend:{labels:{font:{size:12},usePointStyle:true,pointStyleWidth:10}},
         tooltip:{callbacks:{label:c=>c.dataset.label==='CSAT %'?` CSAT: ${c.raw}%`:` Volume: ${c.raw}`}} },
       scales:{
-        yL:{position:'left',min:0,max:100,ticks:{callback:v=>v+'%',font:{size:11}},grid:{color:'#f1f5f9'}},
+        yL:{position:'|eft',min:0,max:100,ticks:{callback:v=>v+'%',font:{size:11}},grid:{color:'#f1f5f9'}},
         yR:{position:'right',min:0,ticks:{font:{size:11}},grid:{drawOnChartArea:false}},
         x:{ticks:{font:{size:11},maxTicksLimit:10},grid:{color:'#f8fafc'}}
       }
@@ -895,7 +896,7 @@ function updateBar(canvasId, key, data, field, cap) {
       plugins:{ legend:{display:false},
         tooltip:{ callbacks:{ label:ctx=>{
           const [,v]=sorted[ctx.dataIndex]
-          return [`CSAT: ${ctx.raw}%`,`? ${v.g}  ? ${v.b}  Total: ${v.g+v.b}`]
+          return [`CSAT: ${ctx.raw}%`,`Good: ${v.g}  Bad: ${v.b}  Total: ${v.g+v.b}`]
         }}} },
       scales:{
         x:{min:0,max:100,ticks:{callback:v=>v+'%',font:{size:11}},grid:{color:'#f1f5f9'}},
@@ -910,16 +911,16 @@ function updateTable(data) {
 
   // -- Gate: entire section is locked until an agent logs in ----------
   if (!loggedInAgent) {
-    $('badBadge').textContent = '?'
+    $('badBadge').textContent = '0'
     $('tableWrap').innerHTML = `
       <div class="state-box" style="padding:56px 20px;gap:14px">
-        <div style="font-size:44px;line-height:1">?</div>
+        <div style="font-size:44px;line-height:1">&#128203;</div>
         <div style="font-size:15px;font-weight:700;color:var(--text)">Login to view bad-rated tickets</div>
         <div style="font-size:13px;color:var(--muted);text-align:center;max-width:320px;line-height:1.6">
           Log in with your dashboard account to view and analyze bad-rated tickets.
         </div>
         <button class="btn-primary" onclick="openLoginModal()" style="margin-top:4px;padding:9px 22px">
-          ? Agent Login
+          Agent Login
         </button>
       </div>`
     return
@@ -933,7 +934,7 @@ function updateTable(data) {
   bad.forEach(r => { badTicketMap[r.ticket_id] = r })
 
   if (!bad.length) {
-    $('tableWrap').innerHTML = `<div class="state-box">? No bad-rated tickets in this period.</div>`
+    $('tableWrap').innerHTML = `<div class="state-box">No bad-rated tickets in this period.</div>`
     return
   }
 
@@ -942,7 +943,7 @@ function updateTable(data) {
       ? `https://${FD_DOMAIN}.freshdesk.com/helpdesk/tickets/${r.ticket_id}`
       : null
     const tidEl = fdUrl
-      ? `<a class="tid" href="${fdUrl}" target="_blank" rel="noopener">#${esc(r.ticket_id)} ?</a>`
+      ? `<a class="tid" href="${fdUrl}" target="_blank" rel="noopener">#${esc(r.ticket_id)}</a>`
       : `<span class="tid">#${esc(r.ticket_id)}</span>`
     const comment = r.comment
       ? `"${esc(r.comment)}"`
@@ -957,7 +958,7 @@ function updateTable(data) {
       <td class="comment-cell">${comment}</td>
       <td class="date-cell">${fmtDate(r.responded_at)}</td>
       <td>
-        <button class="btn-analyze${rcaMap[r.ticket_id] ? ' has-rca' : ''}" id="abtn-${r.ticket_id}" onclick="analyzeTicket(${r.ticket_id})">${rcaMap[r.ticket_id] ? '? View RCA' : '? Analyze'}</button>
+        <button class="btn-analyze${rcaMap[r.ticket_id] ? ' has-rca' : ''}" id="abtn-${r.ticket_id}" onclick="analyzeTicket(${r.ticket_id})">${rcaMap[r.ticket_id] ? 'View RCA' : 'Analyze'}</button>
       </td>
     </tr>`
   }).join('')
@@ -1000,7 +1001,7 @@ async function loadRcaStatus() {
     Object.keys(rcaMap).forEach(tid => {
       const btn = $(`abtn-${tid}`)
       if (btn && !btn.disabled) {
-        btn.textContent = '? View RCA'
+        btn.textContent = 'View RCA'
         btn.classList.add('has-rca')
       }
     })
@@ -1016,7 +1017,7 @@ async function analyzeTicket(ticketId, force = false) {
   // Disable the button while loading
   const btn = $(`abtn-${ticketId}`)
   const hadRca = rcaMap[ticketId]
-  if (btn) { btn.disabled = true; btn.classList.add('loading'); btn.textContent = '? Loading...' }
+  if (btn) { btn.disabled = true; btn.classList.add('loading'); btn.textContent = 'Loading...' }
 
   showModal(ticketId, row)
 
@@ -1060,10 +1061,10 @@ async function analyzeTicket(ticketId, force = false) {
       btn.disabled = false
       btn.classList.remove('loading')
       if (rcaMap[ticketId]) {
-        btn.textContent = '? View RCA'
+        btn.textContent = 'View RCA'
         btn.classList.add('has-rca')
       } else {
-        btn.textContent = '? Analyze'
+        btn.textContent = 'Analyze'
         btn.classList.remove('has-rca')
       }
     }
@@ -1080,7 +1081,7 @@ function fdTicketUrl(ticketId) {
 }
 
 function showModal(ticketId, row) {
-  $('mTitle').textContent = `RCA ? Ticket #${ticketId}`
+  $('mTitle').textContent = `RCA: Ticket #${ticketId}`
   $('mSub').textContent   = row.subject || `${row.agent_name || ''} . ${fmtDate(row.responded_at)}`
   const url = fdTicketUrl(ticketId)
   const lnk = $('mFdLink')
@@ -1121,7 +1122,7 @@ function renderAnalysis(ticketId, row, data) {
 
   const commentHtml = row.comment ? `
     <div class="csat-comment-box">
-      <div class="csat-comment-label">? Customer's CSAT comment</div>
+      <div class="csat-comment-label">Customer's CSAT comment</div>
       "${esc(row.comment)}"
     </div>` : ''
 
@@ -1134,19 +1135,19 @@ function renderAnalysis(ticketId, row, data) {
   // Comment analysis section (shown if CSAT comment exists; or if no comment, shows conversation-based analysis)
   const commentAnalysisHtml = a.customer_comment_analysis && a.customer_comment_analysis !== 'N/A ? no comment left by customer'
     ? `<div class="rca-section comment-analysis">
-        <div class="rca-label">? What the Customer Meant</div>
+        <div class="rca-label">What the Customer Meant</div>
         <div class="rca-text">${esc(a.customer_comment_analysis)}</div>
       </div>` : ''
 
   // Agent response summary section
   const agentSummaryHtml = a.agent_response_summary
     ? `<div class="rca-section agent-summary">
-        <div class="rca-label">??? Agent Response Summary</div>
+        <div class="rca-label">Agent Response Summary</div>
         <div class="rca-text">${esc(a.agent_response_summary)}</div>
       </div>` : ''
 
   // Footer with analyzed_by / analyzed_at / re-analyze button
-  const savedLabel = data.saved ? '? Saved to database' : ''
+  const savedLabel = data.saved ? 'Saved to database' : ''
   const analyzedBy = data.analyzed_by ? `Analyzed by <strong>${esc(data.analyzed_by)}</strong>` : ''
   const analyzedAt = data.analyzed_at
     ? `on ${new Date(data.analyzed_at).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })}`
@@ -1154,41 +1155,41 @@ function renderAnalysis(ticketId, row, data) {
   const footerHtml = `
     <div class="rca-footer">
       <span>${[savedLabel, analyzedBy, analyzedAt].filter(Boolean).join(' &nbsp;.&nbsp; ')}</span>
-      <button class="btn-reanalyze" onclick="reanalyzeTicket(${ticketId})">? Re-analyze</button>
+      <button class="btn-reanalyze" onclick="reanalyzeTicket(${ticketId})">Re-analyze</button>
     </div>`
 
   $('modalBody').innerHTML = `
     <div class="modal-body">
       ${warnHtml}
       ${commentHtml}
-      <span class="sev-chip ${sevClass}">? ${sevLabel}</span>
+      <span class="sev-chip ${sevClass}">${sevLabel}</span>
 
       ${commentAnalysisHtml}
 
       <div class="rca-section">
-        <div class="rca-label">? Customer's Query</div>
+        <div class="rca-label">Customer's Query</div>
         <div class="rca-text">${esc(a.user_query || 'Could not determine.')}</div>
       </div>
 
       ${agentSummaryHtml}
 
       <div class="rca-section">
-        <div class="rca-label">?? Agent Actions Taken</div>
+        <div class="rca-label">Agent Actions Taken</div>
         <div class="rca-text">${esc(a.agent_actions || 'Could not determine.')}</div>
       </div>
 
       <div class="rca-section">
-        <div class="rca-label">? Agent Response Quality</div>
+        <div class="rca-label">Agent Response Quality</div>
         <div class="rca-text">${esc(a.agent_response_quality || 'Could not determine.')}</div>
       </div>
 
       <div class="rca-section bad-s">
-        <div class="rca-label">? Possible Reasons for Bad Rating</div>
+        <div class="rca-label">Possible Reasons for Bad Rating</div>
         <ul class="rca-list">${reasonsHTML || '<li>Could not determine</li>'}</ul>
       </div>
 
       <div class="rca-section good-s">
-        <div class="rca-label">? How to Prevent This in Future</div>
+        <div class="rca-label">How to Prevent This in Future</div>
         <ul class="rca-list">${suggestHTML || '<li>No suggestions available</li>'}</ul>
       </div>
 
@@ -1452,7 +1453,7 @@ async function loadAgentList() {
           <span class="agent-list-role ${isAdmin?'role-admin':'role-agent'}">${a.role}</span>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
-          <button class="btn-reset-pw" onclick="openResetPwModal('${a.id}','${esc(a.name)}','${esc(a.email)}')" title="Reset password">? Reset PW</button>
+          <button class="btn-reset-pw" onclick="openResetPwModal('${a.id}','${esc(a.name)}','${esc(a.email)}')" title="Reset password">Reset PW</button>
           ${isAdmin ? '' : `<button class="btn-delete-agent" onclick="deleteAgent('${a.id}','${esc(a.name)}')">Remove</button>`}
         </div>
       </li>`
@@ -1493,7 +1494,7 @@ async function createAgent() {
     $('newAgentName').value     = ''
     $('newAgentEmail').value    = ''
     $('newAgentPassword').value = ''
-    msgEl.textContent = `? Member "${name}" added successfully.`
+    msgEl.textContent = `Member "${name}" added successfully.`
     msgEl.style.display = 'block'
     await loadAgentList()
   } catch (err) {
@@ -1521,7 +1522,7 @@ async function deleteAgent(agentId, name) {
     const data = await res.json()
     if (!res.ok || data.error) throw new Error(data.error || 'Failed to remove agent.')
 
-    msgEl.textContent = `? Agent "${name}" removed.`
+    msgEl.textContent = `Agent "${name}" removed.`
     msgEl.style.display = 'block'
     await loadAgentList()
   } catch (err) {
@@ -1577,7 +1578,7 @@ async function sendPasswordReset() {
       redirectTo: window.location.origin + window.location.pathname
     })
     if (error) throw error
-    okEl.textContent    = '? Reset link sent! Check your email inbox and follow the link to set a new password.'
+    okEl.textContent    = 'Reset link sent! Check your email inbox and follow the link to set a new password.'
     okEl.style.display  = 'block'
   } catch (err) {
     errEl.textContent   = err.message || 'Failed to send reset email. Please try again.'
@@ -1645,7 +1646,7 @@ async function confirmAdminResetPw() {
     try { data = await res.json() } catch(_) {}
     if (!res.ok || data.error) throw new Error(data.error || `Server error ${res.status}`)
 
-    okEl.textContent   = '? Password reset successfully.'
+    okEl.textContent   = 'Password reset successfully.'
     okEl.style.display = 'block'
     $('resetPwNew').value    = ''
     $('resetPwConfirm').value = ''
