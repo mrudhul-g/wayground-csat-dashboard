@@ -1919,10 +1919,10 @@ async function loadMultipleRatings() {
 
     container.className = 'mr-table-wrap'
     container.innerHTML = '<table class="mr-table"><thead><tr>' +
-      '<th class="mr-th-sort" onclick="mrSortBy(\"ticket\",this)">Ticket <span class="mr-sort-icon" id="msi_ticket">⇅</span></th>' +
-      '<th class="mr-th-sort" onclick="mrSortBy(\"agent\",this)">Agent <span class="mr-sort-icon" id="msi_agent">⇅</span></th>' +
+      '<th class="mr-th-sort" onclick="mrSortBy('ticket',this)">Ticket <span class="mr-sort-icon" id="msi_ticket">⇅</span></th>' +
+      '<th class="mr-th-sort" onclick="mrSortBy('agent',this)">Agent <span class="mr-sort-icon" id="msi_agent">⇅</span></th>' +
       '<th>Total</th><th>Good / Bad</th><th>Sequence</th>' +
-      '<th class="mr-th-sort" onclick="mrSortBy(\"pattern\",this)">Pattern <span class="mr-sort-icon" id="msi_pattern">⇅</span></th>' +
+      '<th class="mr-th-sort" onclick="mrSortBy('pattern',this)">Pattern <span class="mr-sort-icon" id="msi_pattern">⇅</span></th>' +
       '<th>Customer Comments</th>' +
       '</tr></thead><tbody id="mrTbody">'+rowsHtml+'</tbody></table>'
   } catch(err) {
