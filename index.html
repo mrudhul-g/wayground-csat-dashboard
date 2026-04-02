@@ -476,7 +476,7 @@
 .mr-table{width:100%;border-collapse:collapse;font-size:13px}
 .mr-table th{background:var(--bg);padding:10px 14px;text-align:left;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border)}
 .mr-table td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:top}
-.mr-table tr:last-child td{border-bottom:none}.mr-footer{margin-top:20px;display:flex;justify-content:flex-end}
+.mr-table tr:last-child td{border-bottom:none}.mr-th-sort{cursor:pointer;user-select:none;white-space:nowrap;transition:background .15s}.mr-th-sort:hover{background:rgba(79,70,229,.18)}.mr-sort-icon{opacity:.4;font-size:11px;margin-left:4px}.mr-th-sort.mr-sort-on .mr-sort-icon{opacity:1;color:#818cf8}.mr-footer{margin-top:20px;display:flex;justify-content:flex-end}
 </style>
 </head>
 <body>
@@ -1919,15 +1919,44 @@ async function loadMultipleRatings() {
 
     container.className = 'mr-table-wrap'
     container.innerHTML = '<table class="mr-table"><thead><tr>' +
-      '<th>Ticket</th><th>Agent</th><th>Total</th>' +
-      '<th>Good / Bad</th><th>Sequence</th><th>Pattern</th><th>Customer Comments</th>' +
-      '</tr></thead><tbody>'+rowsHtml+'</tbody></table>'
+      '<th class="mr-th-sort" onclick="mrSortBy(\"ticket\",this)">Ticket <span class="mr-sort-icon" id="msi_ticket">⇅</span></th>' +
+      '<th class="mr-th-sort" onclick="mrSortBy(\"agent\",this)">Agent <span class="mr-sort-icon" id="msi_agent">⇅</span></th>' +
+      '<th>Total</th><th>Good / Bad</th><th>Sequence</th>' +
+      '<th class="mr-th-sort" onclick="mrSortBy(\"pattern\",this)">Pattern <span class="mr-sort-icon" id="msi_pattern">⇅</span></th>' +
+      '<th>Customer Comments</th>' +
+      '</tr></thead><tbody id="mrTbody">'+rowsHtml+'</tbody></table>'
   } catch(err) {
     container.className = 'mr-empty'
     container.innerHTML = '<span style="color:var(--bad)">'+esc(err.message)+'</span>'
   }
 }
 
+var _mrSortCol=null,_mrSortDir=1;
+function mrSortBy(col,th){
+  if(_mrSortCol===col){_mrSortDir*=-1}else{_mrSortCol=col;_mrSortDir=1}
+  document.querySelectorAll('.mr-th-sort').forEach(function(t){t.classList.remove('mr-sort-on')})
+  document.querySelectorAll('.mr-sort-icon').forEach(function(ic){ic.textContent='⇅'})
+  if(th){th.classList.add('mr-sort-on');th.querySelector('.mr-sort-icon').textContent=_mrSortDir===1?'↑':'↓'}
+  var tbody=document.getElementById('mrTbody');if(!tbody)return;
+  var rows=Array.from(tbody.querySelectorAll('tr'));
+  rows.sort(function(a,b){
+    var va='',vb='';
+    if(col==='ticket'){
+      va=(a.querySelector('.tid')||{}).textContent||'';
+      vb=(b.querySelector('.tid')||{}).textContent||'';
+      var na=parseInt(va.replace(/\D/g,'')),nb=parseInt(vb.replace(/\D/g,''));
+      if(!isNaN(na)&&!isNaN(nb))return (na-nb)*_mrSortDir;
+    }else if(col==='agent'){
+      va=(a.cells[1]||{}).textContent||'';
+      vb=(b.cells[1]||{}).textContent||'';
+    }else if(col==='pattern'){
+      va=(a.cells[5]||{}).textContent||'';
+      vb=(b.cells[5]||{}).textContent||'';
+    }
+    return va.localeCompare(vb)*_mrSortDir;
+  });
+  rows.forEach(function(r){tbody.appendChild(r)});
+}
 </script>
 </body>
 </html>
