@@ -450,7 +450,34 @@
     @media(max-width:1100px){ .charts-grid{grid-template-columns:1fr 1fr} .charts-grid .chart-card:first-child{grid-column:1/-1} }
     @media(max-width:760px){ .page{padding:16px} .header{padding:0 16px} .kpi-row{grid-template-columns:1fr 1fr} .charts-grid{grid-template-columns:1fr} }
     @media(max-width:480px){ .kpi-row{grid-template-columns:1fr} }
-  </style>
+  
+/* ---- Multiple Ratings Modal ---- */
+.mr-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1100;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
+.mr-box{background:var(--surface);border-radius:14px;width:100%;max-width:880px;box-shadow:0 8px 40px rgba(0,0,0,.35);animation:fadeUp .2s ease}
+.mr-head{background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:14px 14px 0 0;padding:20px 24px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.mr-head-title{color:#fff;font-size:18px;font-weight:700;margin-bottom:4px}
+.mr-head-sub{color:rgba(255,255,255,.75);font-size:13px}
+.mr-body{padding:24px}
+.mr-stats-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.mr-stat{background:var(--bg);border-radius:10px;padding:14px 18px;flex:1;min-width:100px;text-align:center;border:1px solid var(--border)}
+.mr-stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.mr-stat-value{font-size:22px;font-weight:700;color:var(--text)}
+.mr-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap}
+.badge-rage{background:#fef3c7;color:#92400e}.badge-b2g{background:#d1fae5;color:#065f46}
+.badge-g2b{background:#fee2e2;color:#991b1b}.badge-rep-good{background:#dbeafe;color:#1e40af}
+.badge-rep-bad{background:#fce7f3;color:#9d174d}.badge-mixed{background:#f3f4f6;color:#374151}
+.mr-rating-seq{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.mr-pip{width:12px;height:12px;border-radius:50%;display:inline-block}
+.mr-pip.good{background:#16a34a}.mr-pip.bad{background:#dc2626}.mr-pip.neutral{background:#94a3b8}
+.mr-comments{font-size:13px;color:var(--text);line-height:1.7}
+.mr-comment{margin-bottom:6px}.mr-no-comment{color:var(--muted);font-style:italic;font-size:12px}
+.mr-empty,.mr-loading{padding:48px;text-align:center;color:var(--muted);font-size:14px}
+.mr-table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border)}
+.mr-table{width:100%;border-collapse:collapse;font-size:13px}
+.mr-table th{background:var(--bg);padding:10px 14px;text-align:left;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border)}
+.mr-table td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+.mr-table tr:last-child td{border-bottom:none}.mr-footer{margin-top:20px;display:flex;justify-content:flex-end}
+</style>
 </head>
 <body>
 
@@ -473,6 +500,8 @@
     <button class="btn-manage-members" id="manageMembersBtn" onclick="openAdminPanel()">
       Manage Members
     </button>
+      <!-- Admin-only Multiple Ratings button -->
+      <button class="btn-manage-members" id="multipleRatingsBtn" onclick="openMultipleRatings()" style="display:none">&#9888;&#65039; Multiple Ratings</button>
 
     <!-- Logged-in state (hidden until login) -->
     <div class="agent-chip" id="headerAgentChip" style="display:none">
@@ -699,6 +728,24 @@
         onkeydown="if(event.key==='Enter') confirmAdminResetPw()" />
       <button class="btn-login-submit" id="resetPwBtn" onclick="confirmAdminResetPw()">Reset Password</button>
       <button class="login-cancel" onclick="closeResetPwModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- -- MULTIPLE RATINGS MODAL ---------------------------------------- -->
+<div class="mr-overlay" id="mrModal" style="display:none" onclick="mrOverlayClick(event)">
+  <div class="mr-box" id="mrBox">
+    <div class="mr-head">
+      <div>
+        <div class="mr-head-title">&#9888;&#65039; Multiple Ratings per Ticket</div>
+        <div class="mr-head-sub">Tickets where a customer submitted the CSAT survey more than once</div>
+      </div>
+      <button style="background:none;border:none;cursor:pointer;color:white;font-size:20px;line-height:1;padding:2px 4px;" onclick="closeMultipleRatings()">&#x2715;</button>
+    </div>
+    <div class="mr-body">
+      <div class="mr-stats-row" id="mrStats"></div>
+      <div id="mrTableContainer" class="mr-loading">Loading...</div>
+      <div class="mr-footer"><button class="btn-ghost" onclick="closeMultipleRatings()">Close</button></div>
     </div>
   </div>
 </div>
@@ -1398,10 +1445,12 @@ function renderAgentChip() {
     $('agentDisplayEmail').textContent     = loggedInAgent.email
     // Show Manage Members button only for admins
     $('manageMembersBtn').style.display    = loggedInAgent.role === 'admin' ? 'flex' : 'none'
+    $('multipleRatingsBtn').style.display = loggedInAgent.role === 'admin' ? 'flex' : 'none'
   } else {
     $('headerLoginBtn').style.display      = 'flex'
     $('headerAgentChip').style.display     = 'none'
     $('manageMembersBtn').style.display    = 'none'
+    $('multipleRatingsBtn').style.display = 'none'
   }
 }
 
@@ -1742,6 +1791,133 @@ async function init() {
 }
 
 init()
+
+
+/* =====================================================================
+   MULTIPLE RATINGS  (admin-only)
+   ===================================================================== */
+function openMultipleRatings() {
+  $('mrModal').style.display = 'flex'
+  document.body.style.overflow = 'hidden'
+  loadMultipleRatings()
+}
+function closeMultipleRatings() {
+  $('mrModal').style.display = 'none'
+  document.body.style.overflow = ''
+}
+function mrOverlayClick(e) {
+  if (e.target === $('mrModal')) closeMultipleRatings()
+}
+
+function detectPattern(ratings, timestamps) {
+  var n = ratings.length
+  var first = ratings[0], last = ratings[n - 1]
+  var allSame = ratings.every(function(r){ return r === first })
+  if (allSame && n >= 2) {
+    var t0 = new Date(timestamps[0]).getTime()
+    var tLast = new Date(timestamps[n - 1]).getTime()
+    if (tLast - t0 <= 120000) return { label: '&#128636; Rage Clicking', cls: 'badge-rage' }
+  }
+  if (first === 'Bad'  && last === 'Good') return { label: '&#9650; Bad → Good', cls: 'badge-b2g' }
+  if (first === 'Good' && last === 'Bad')  return { label: '&#9660; Good → Bad', cls: 'badge-g2b' }
+  if (allSame) return first === 'Good'
+    ? { label: '&#128515; Repeated Good', cls: 'badge-rep-good' }
+    : { label: '&#128532; Repeated Bad',  cls: 'badge-rep-bad' }
+  return { label: '&#8645; Mixed', cls: 'badge-mixed' }
+}
+
+async function loadMultipleRatings() {
+  var container = $('mrTableContainer')
+  var statsEl   = $('mrStats')
+  container.className = 'mr-loading'
+  container.innerHTML = 'Loading...'
+  statsEl.innerHTML = ''
+  try {
+    var res = await sb
+      .from('csat_responses')
+      .select('ticket_id, agent_name, rating, comment, responded_at')
+      .order('ticket_id')
+      .order('responded_at', { ascending: true })
+    if (res.error) throw new Error(res.error.message)
+    var data = res.data
+
+    // Group by ticket_id
+    var grouped = {}
+    for (var i = 0; i < data.length; i++) {
+      var row = data[i]
+      if (!grouped[row.ticket_id]) grouped[row.ticket_id] = []
+      grouped[row.ticket_id].push(row)
+    }
+    var multi = Object.entries(grouped)
+      .filter(function(e){ return e[1].length > 1 })
+      .sort(function(a, b){ return b[1].length - a[1].length })
+
+    if (!multi.length) {
+      container.className = 'mr-empty'
+      container.innerHTML = '&#10003; No tickets with multiple ratings found.'
+      return
+    }
+
+    // Summary stats
+    var rageC=0, b2gC=0, g2bC=0, repC=0, mixC=0
+    multi.forEach(function(e){
+      var p = detectPattern(e[1].map(function(r){return r.rating}), e[1].map(function(r){return r.responded_at}))
+      if (p.cls==='badge-rage') rageC++
+      else if (p.cls==='badge-b2g') b2gC++
+      else if (p.cls==='badge-g2b') g2bC++
+      else if (p.cls==='badge-rep-good'||p.cls==='badge-rep-bad') repC++
+      else mixC++
+    })
+    statsEl.innerHTML =
+      '<div class="mr-stat"><div class="mr-stat-label">Affected Tickets</div><div class="mr-stat-value">'+multi.length+'</div></div>' +
+      '<div class="mr-stat"><div class="mr-stat-label">&#128636; Rage Clicks</div><div class="mr-stat-value" style="color:var(--warn)">'+rageC+'</div></div>' +
+      '<div class="mr-stat"><div class="mr-stat-label">&#9650; Bad→Good</div><div class="mr-stat-value" style="color:var(--good)">'+b2gC+'</div></div>' +
+      '<div class="mr-stat"><div class="mr-stat-label">&#9660; Good→Bad</div><div class="mr-stat-value" style="color:var(--bad)">'+g2bC+'</div></div>' +
+      '<div class="mr-stat"><div class="mr-stat-label">&#8645; Other</div><div class="mr-stat-value" style="color:var(--muted)">'+(repC+mixC)+'</div></div>'
+
+    // Table rows
+    var rowsHtml = multi.map(function(entry){
+      var ticketId = entry[0], rows = entry[1]
+      var ratings    = rows.map(function(r){return r.rating})
+      var timestamps = rows.map(function(r){return r.responded_at})
+      var pattern    = detectPattern(ratings, timestamps)
+      var agentName  = (rows.find(function(r){return r.agent_name}) || {}).agent_name || ''
+      var goodCount  = ratings.filter(function(r){return r==='Good'}).length
+      var badCount   = ratings.filter(function(r){return r==='Bad'}).length
+      var fdUrl = FD_DOMAIN ? 'https://'+FD_DOMAIN+'.freshdesk.com/helpdesk/tickets/'+ticketId : null
+      var tidEl = fdUrl
+        ? '<a class="tid" href="'+fdUrl+'" target="_blank" rel="noopener">#'+esc(ticketId)+'</a>'
+        : '<span class="tid">#'+esc(ticketId)+'</span>'
+      var pips = ratings.map(function(r){
+        var c = r==='Good'?'good':r==='Bad'?'bad':'neutral'
+        return '<span class="mr-pip '+c+'" title="'+esc(r)+'"></span>'
+      }).join('')
+      var commentLines = rows.map(function(r, i){
+        if (!r.comment) return ''
+        return '<div class="mr-comment">"“<em>'+esc(r.comment)+'</em>” <span style="color:#94a3b8;font-size:11px">— submission '+(i+1)+', '+fmtDate(r.responded_at)+'</span></div>'
+      }).filter(Boolean).join('')
+      var commentsHtml = commentLines
+        ? '<div class="mr-comments">'+commentLines+'</div>'
+        : '<span class="mr-no-comment">No comments left</span>'
+      return '<tr><td>'+tidEl+'</td><td>'+esc(agentName)+'</td>' +
+        '<td style="text-align:center;font-weight:700">'+rows.length+'</td>' +
+        '<td><span style="color:var(--good);font-weight:700">'+goodCount+'</span>&nbsp;/&nbsp;<span style="color:var(--bad);font-weight:700">'+badCount+'</span></td>' +
+        '<td><div class="mr-rating-seq">'+pips+'</div></td>' +
+        '<td><span class="mr-badge '+pattern.cls+'">'+pattern.label+'</span></td>' +
+        '<td>'+commentsHtml+'</td></tr>'
+    }).join('')
+
+    container.className = 'mr-table-wrap'
+    container.innerHTML = '<table class="mr-table"><thead><tr>' +
+      '<th>Ticket</th><th>Agent</th><th>Total</th>' +
+      '<th>Good / Bad</th><th>Sequence</th><th>Pattern</th><th>Customer Comments</th>' +
+      '</tr></thead><tbody>'+rowsHtml+'</tbody></table>'
+  } catch(err) {
+    container.className = 'mr-empty'
+    container.innerHTML = '<span style="color:var(--bad)">'+esc(err.message)+'</span>'
+  }
+}
+
 </script>
 </body>
 </html>
