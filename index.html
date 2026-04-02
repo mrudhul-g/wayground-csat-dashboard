@@ -452,8 +452,8 @@
     @media(max-width:480px){ .kpi-row{grid-template-columns:1fr} }
   
 /* ---- Multiple Ratings Modal ---- */
-.mr-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1100;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
-.mr-box{background:var(--surface);border-radius:14px;width:100%;max-width:880px;box-shadow:0 8px 40px rgba(0,0,0,.35);animation:fadeUp .2s ease}
+.mr-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1100;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
+.mr-box{background:#ffffff;border-radius:14px;width:100%;max-width:880px;box-shadow:0 8px 40px rgba(0,0,0,.35);animation:fadeUp .2s ease}
 .mr-head{background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:14px 14px 0 0;padding:20px 24px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
 .mr-head-title{color:#fff;font-size:18px;font-weight:700;margin-bottom:4px}
 .mr-head-sub{color:rgba(255,255,255,.75);font-size:13px}
@@ -1833,13 +1833,23 @@ async function loadMultipleRatings() {
   container.innerHTML = 'Loading...'
   statsEl.innerHTML = ''
   try {
-    var res = await sb
-      .from('csat_responses')
-      .select('ticket_id, agent_name, rating, comment, responded_at')
-      .order('ticket_id')
-      .order('responded_at', { ascending: true })
-    if (res.error) throw new Error(res.error.message)
-    var data = res.data
+    // Paginate to fetch ALL rows (Supabase default limit is 1000)
+    var allData = []
+    var pageSize = 1000
+    var from = 0
+    while (true) {
+      var res = await sb
+        .from('csat_responses')
+        .select('ticket_id, agent_name, rating, comment, responded_at')
+        .order('ticket_id')
+        .order('responded_at', { ascending: true })
+        .range(from, from + pageSize - 1)
+      if (res.error) throw new Error(res.error.message)
+      allData = allData.concat(res.data)
+      if (res.data.length < pageSize) break
+      from += pageSize
+    }
+    var data = allData
 
     // Group by ticket_id
     var grouped = {}
