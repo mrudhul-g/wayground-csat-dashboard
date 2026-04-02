@@ -477,6 +477,7 @@
 .mr-table th{background:var(--bg);padding:10px 14px;text-align:left;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border)}
 .mr-table td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:top}
 .mr-table tr:last-child td{border-bottom:none}.mr-th-sort{cursor:pointer;user-select:none;white-space:nowrap;transition:background .15s}.mr-th-sort:hover{background:rgba(79,70,229,.18)}.mr-sort-icon{opacity:.4;font-size:11px;margin-left:4px}.mr-th-sort.mr-sort-on .mr-sort-icon{opacity:1;color:#818cf8}.mr-footer{margin-top:20px;display:flex;justify-content:flex-end}
+.section-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.btn-bulk-rca{display:none;align-items:center;gap:6px;padding:5px 14px;font-size:12px;font-weight:600;border-radius:8px;border:none;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;cursor:pointer;transition:opacity .2s}.btn-bulk-rca:hover{opacity:.85}.btn-bulk-rca:disabled{opacity:.5;cursor:not-allowed}.bulk-rca-prog{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
 </style>
 </head>
 <body>
@@ -583,6 +584,8 @@
   <div class="section-head">
     <span class="section-title">Bad-Rated Tickets</span>
     <span class="badge-count" id="badBadge">0</span>
+    <button class="btn-bulk-rca" id="bulkRcaBtn" style="display:none" onclick="bulkRca()">&#9889; Run RCA for All</button>
+    <span class="bulk-rca-prog" id="bulkRcaProg" style="display:none"></span>
   </div>
   <div class="table-card">
     <div id="tableWrap">
@@ -1446,11 +1449,13 @@ function renderAgentChip() {
     // Show Manage Members button only for admins
     $('manageMembersBtn').style.display    = loggedInAgent.role === 'admin' ? 'flex' : 'none'
     $('multipleRatingsBtn').style.display = loggedInAgent.role === 'admin' ? 'flex' : 'none'
+    $('bulkRcaBtn').style.display        = loggedInAgent.role === 'admin' ? 'inline-flex' : 'none'
   } else {
     $('headerLoginBtn').style.display      = 'flex'
     $('headerAgentChip').style.display     = 'none'
     $('manageMembersBtn').style.display    = 'none'
     $('multipleRatingsBtn').style.display = 'none'
+    $('bulkRcaBtn').style.display        = 'none'
   }
 }
 
@@ -1995,6 +2000,59 @@ async function runAutoRca() {
       if (btn) { btn.disabled = false; btn.textContent = 'Analyze'; btn.classList.remove('loading') }
     }
   }
+}
+
+/* ===================================================================
+   BULK RCA — run RCA on all bad tickets visible on the dashboard
+   =================================================================== */
+async function bulkRca() {
+  var btn  = $('bulkRcaBtn')
+  var prog = $('bulkRcaProg')
+  var pending = Object.keys(badTicketMap).filter(function(id){ return !rcaMap[id] })
+  if (!pending.length) {
+    prog.style.display = 'inline'
+    prog.textContent = '✅ All tickets already analyzed'
+    setTimeout(function(){ prog.style.display = 'none' }, 3000)
+    return
+  }
+  btn.disabled = true
+  btn.textContent = 'Running…'
+  prog.style.display = 'inline'
+  prog.textContent = '0 / ' + pending.length + ' analyzed'
+  var done = 0, failed = 0
+  for (var _i = 0; _i < pending.length; _i++) {
+    var ticketId = pending[_i]
+    var row = badTicketMap[ticketId] || {}
+    var tbtn = document.getElementById('abtn-' + ticketId)
+    if (tbtn) { tbtn.disabled = true; tbtn.textContent = '⏳'; tbtn.classList.add('loading') }
+    try {
+      var p = new URLSearchParams({
+        action:      'analyze',
+        ticket_id:   ticketId,
+        comment:     row.comment || '',
+        analyzed_by: (loggedInAgent.name || loggedInAgent.email || 'System') + ' [Auto]',
+        force:       'false'
+      })
+      var res = await fetch(EDGE_URL + '?' + p, { headers: Object.assign({}, authHeaders()) })
+      var data = await res.json()
+      if (res.ok && !data.error) {
+        rcaMap[ticketId] = { ticket_id: ticketId, analyzed_by: data.analyzed_by, analyzed_at: data.analyzed_at, severity: data.analysis && data.analysis.severity }
+        if (tbtn) { tbtn.disabled = false; tbtn.textContent = 'View RCA'; tbtn.classList.remove('loading'); tbtn.classList.add('has-rca') }
+        done++
+      } else {
+        if (tbtn) { tbtn.disabled = false; tbtn.textContent = 'Analyze'; tbtn.classList.remove('loading') }
+        failed++
+      }
+    } catch(_e) {
+      if (tbtn) { tbtn.disabled = false; tbtn.textContent = 'Analyze'; tbtn.classList.remove('loading') }
+      failed++
+    }
+    prog.textContent = (done + failed) + ' / ' + pending.length + ' analyzed'
+  }
+  btn.disabled = false
+  btn.textContent = '⚡ Run RCA for All'
+  prog.textContent = '✅ ' + done + ' done' + (failed ? ' (⚠️ ' + failed + ' failed)' : '')
+  setTimeout(function(){ prog.style.display = 'none' }, 5000)
 }
 
 </script>
