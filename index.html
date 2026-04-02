@@ -1025,7 +1025,7 @@ function updateTable(data) {
     </div>`
 
   // Refresh RCA status badges from DB (non-blocking)
-  loadRcaStatus()
+  loadRcaStatus().then(function(){ runAutoRca() })
 }
 
 /* ====================================================================
@@ -1957,6 +1957,46 @@ function mrSortBy(col,th){
   });
   rows.forEach(function(r){tbody.appendChild(r)});
 }
+/* ===================================================================
+   AUTO RCA — silently analyze new bad tickets after table renders
+   =================================================================== */
+async function runAutoRca() {
+  if (!loggedInAgent) return
+  // Only tickets in badTicketMap that have no saved RCA yet
+  var pending = Object.keys(badTicketMap).filter(function(id){ return !rcaMap[id] })
+  if (!pending.length) return
+  for (var _i = 0; _i < pending.length; _i++) {
+    var ticketId = pending[_i]
+    var row = badTicketMap[ticketId] || {}
+    var btn = document.getElementById('abtn-' + ticketId)
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Analyzing…'; btn.classList.add('loading') }
+    try {
+      var p = new URLSearchParams({
+        action:      'analyze',
+        ticket_id:   ticketId,
+        comment:     row.comment || '',
+        analyzed_by: (loggedInAgent.name || loggedInAgent.email || 'System') + ' [Auto]',
+        force:       'false'
+      })
+      var res = await fetch(EDGE_URL + '?' + p, { headers: Object.assign({}, authHeaders()) })
+      var data = await res.json()
+      if (res.ok && !data.error) {
+        rcaMap[ticketId] = {
+          ticket_id:   ticketId,
+          analyzed_by: data.analyzed_by,
+          analyzed_at: data.analyzed_at,
+          severity:    data.analysis && data.analysis.severity
+        }
+        if (btn) { btn.disabled = false; btn.textContent = 'View RCA'; btn.classList.remove('loading'); btn.classList.add('has-rca') }
+      } else {
+        if (btn) { btn.disabled = false; btn.textContent = 'Analyze'; btn.classList.remove('loading') }
+      }
+    } catch(_e) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Analyze'; btn.classList.remove('loading') }
+    }
+  }
+}
+
 </script>
 </body>
 </html>
