@@ -584,6 +584,10 @@
       <div class="chart-head">By Agent <small>Top 12</small></div>
       <canvas id="cAgent" height="220"></canvas>
     </div>
+    <div class="chart-card">
+      <div class="chart-head">By Ticket Type</div>
+      <canvas id="cTicketType" height="220"></canvas>
+    </div>
   </div>
 
   <!-- Bad Tickets Table -->
@@ -1269,6 +1273,7 @@ function renderAll() {
   updateTrend(f)
   updateBar('cGroup', 'group', f, 'group_name', 20)
   updateBar('cAgent', 'agent', f, 'agent_name', 12)
+  updateBar('cTicketType', 'ticketType', f, 'ticket_type', 20)
   updateTable(f)
 }
 
