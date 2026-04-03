@@ -245,10 +245,17 @@
     .rca-section.good-s .rca-label { color: var(--good); }
     .rca-tags-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
     .rca-tag { display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; letter-spacing: .03em; }
-    .rca-tag.tag-agent-errors     { background: #fee2e2; color: #991b1b; }
-    .rca-tag.tag-avoidable-issues { background: #fef3c7; color: #92400e; }
-    .rca-tag.tag-product-related  { background: #dbeafe; color: #1e40af; }
-    .rca-tag.tag-payment-related  { background: #d1fae5; color: #065f46; }
+    .rca-tag.tag-agent-handling-issues                    { background: #fee2e2; color: #991b1b; }
+    .rca-tag.tag-user-product-education-issue              { background: #fef9c3; color: #713f12; }
+    .rca-tag.tag-feature-request-or-feature-not-available { background: #dbeafe; color: #1e40af; }
+    .rca-tag.tag-forwarded-to-other-team                   { background: #ede9fe; color: #5b21b6; }
+    .rca-tag.tag-delay-in-resolution                       { background: #fef3c7; color: #92400e; }
+    .rca-tag.tag-bugs                                      { background: #ffedd5; color: #9a3412; }
+    .rca-tag.tag-payment-related                           { background: #d1fae5; color: #065f46; }
+    .followup-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 99px; }
+    .followup-chip.yes { background: #d1fae5; color: #065f46; }
+    .followup-chip.no  { background: #fee2e2; color: #991b1b; }
+    .followup-chip.unk { background: #f1f5f9; color: #64748b; }
     .rca-section.good-s .rca-list li::before { content: '\2022'; color: var(--good); }
     .sev-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
     .sev-high   { background: var(--bad-bg);  color: var(--bad);  }
@@ -1098,11 +1105,12 @@ async function analyzeTicket(ticketId, force = false) {
     // Update local rcaMap so button stays styled correctly
     if (data.saved) {
       rcaMap[ticketId] = {
-        ticket_id:   ticketId,
-        analyzed_by: data.analyzed_by,
-        analyzed_at: data.analyzed_at,
-        severity:    data.analysis?.severity,
-        tags:        data.tags || []
+        ticket_id:     ticketId,
+        analyzed_by:   data.analyzed_by,
+        analyzed_at:   data.analyzed_at,
+        severity:      data.analysis?.severity,
+        tags:          data.tags || [],
+        followup_done: data.followup_done ?? null
       }
     }
 
@@ -1185,6 +1193,12 @@ function renderAnalysis(ticketId, row, data) {
     var cls = 'tag-' + t.toLowerCase().replace(/[\s\/]+/g,'-').replace(/[^a-z0-9-]/g,'')
     return '<span class="rca-tag ' + cls + '">' + esc(t) + '</span>'
   }).join('') : ''
+  const followupVal = data.followup_done != null ? data.followup_done : (rcaMap[ticketId] ? rcaMap[ticketId].followup_done : null)
+  const followupHTML = followupVal === true
+    ? '<span class="followup-chip yes">✓ Follow-up Done</span>'
+    : followupVal === false
+      ? '<span class="followup-chip no">✗ No Follow-up</span>'
+      : '<span class="followup-chip unk">— Follow-up Unknown</span>'
 
   const commentHtml = row.comment ? `
     <div class="csat-comment-box">
@@ -1259,7 +1273,7 @@ function renderAnalysis(ticketId, row, data) {
         <ul class="rca-list">${suggestHTML || '<li>No suggestions available</li>'}</ul>
       </div>
 
-      ${tagsHTML ? '<div class="rca-section"><div class="rca-label">Classification Tags</div><div class="rca-tags-wrap">' + tagsHTML + '</div></div>' : ''}
+      <div class="rca-section"><div class="rca-label">Classification</div><div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:4px">${followupHTML}${tagsHTML}</div></div>
       ${footerHtml}
     </div>`
 }
