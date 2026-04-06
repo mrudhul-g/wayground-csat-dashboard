@@ -756,11 +756,18 @@
 <div class="mr-overlay" id="mrModal" style="display:none" onclick="mrOverlayClick(event)">
   <div class="mr-box" id="mrBox">
     <div class="mr-head">
-      <div>
+      <div style="flex:1">
         <div class="mr-head-title">&#9888;&#65039; Multiple Ratings per Ticket</div>
         <div class="mr-head-sub">Tickets where a customer submitted the CSAT survey more than once</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
+          <label style="font-size:12px;color:rgba(255,255,255,.75);font-weight:600">From</label>
+          <input type="date" id="mrFrom" onchange="loadMultipleRatings()" style="padding:4px 8px;border-radius:6px;border:none;font-size:13px;background:rgba(255,255,255,.15);color:#fff;cursor:pointer" />
+          <label style="font-size:12px;color:rgba(255,255,255,.75);font-weight:600">To</label>
+          <input type="date" id="mrTo" onchange="loadMultipleRatings()" style="padding:4px 8px;border-radius:6px;border:none;font-size:13px;background:rgba(255,255,255,.15);color:#fff;cursor:pointer" />
+          <button onclick="mrResetFilter()" style="padding:4px 12px;border-radius:6px;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:12px;cursor:pointer;font-weight:600">Reset</button>
+        </div>
       </div>
-      <button style="background:none;border:none;cursor:pointer;color:white;font-size:20px;line-height:1;padding:2px 4px;" onclick="closeMultipleRatings()">&#x2715;</button>
+      <button style="background:none;border:none;cursor:pointer;color:white;font-size:20px;line-height:1;padding:2px 4px;align-self:flex-start" onclick="closeMultipleRatings()">&#x2715;</button>
     </div>
     <div class="mr-body">
       <div class="mr-stats-row" id="mrStats"></div>
@@ -1836,6 +1843,13 @@ init()
 function openMultipleRatings() {
   $('mrModal').style.display = 'flex'
   document.body.style.overflow = 'hidden'
+  $('mrFrom').value = $('fFrom').value || ''
+  $('mrTo').value   = $('fTo').value   || ''
+  loadMultipleRatings()
+}
+function mrResetFilter() {
+  $('mrFrom').value = ''
+  $('mrTo').value   = ''
   loadMultipleRatings()
 }
 function closeMultipleRatings() {
@@ -1894,6 +1908,19 @@ async function loadMultipleRatings() {
       var row = data[i]
       if (!grouped[row.ticket_id]) grouped[row.ticket_id] = []
       grouped[row.ticket_id].push(row)
+    }
+    var mrFromVal = ($('mrFrom') && $('mrFrom').value) || ''
+    var mrToVal   = ($('mrTo')   && $('mrTo').value)   || ''
+    if (mrFromVal || mrToVal) {
+      Object.keys(grouped).forEach(function(tid) {
+        grouped[tid] = grouped[tid].filter(function(r) {
+          var d = (r.responded_at || '').slice(0, 10)
+          if (mrFromVal && d < mrFromVal) return false
+          if (mrToVal   && d > mrToVal)   return false
+          return true
+        })
+        if (!grouped[tid].length) delete grouped[tid]
+      })
     }
     var multi = Object.entries(grouped)
       .filter(function(e){ return e[1].length > 1 })
