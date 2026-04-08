@@ -256,6 +256,11 @@
     .followup-chip.yes { background: #d1fae5; color: #065f46; }
     .followup-chip.no  { background: #fee2e2; color: #991b1b; }
     .followup-chip.unk { background: #f1f5f9; color: #64748b; }
+    .fd-tag { display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; letter-spacing: .02em; white-space: nowrap; }
+    .fd-tag.tag-ai-response  { background: #ede9fe; color: #5b21b6; }
+    .fd-tag.tag-delay-csat   { background: #fef3c7; color: #92400e; }
+    .fd-tag.tag-delay-agent  { background: #dbeafe; color: #1e40af; }
+    .fd-tags-cell { display: flex; flex-wrap: wrap; gap: 4px; }
     .rca-section.good-s .rca-list li::before { content: '\2022'; color: var(--good); }
     .sev-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
     .sev-high   { background: var(--bad-bg);  color: var(--bad);  }
@@ -852,7 +857,7 @@ async function fetchAll() {
   while (true) {
     const { data, error } = await sb
       .from('csat_responses')
-      .select('ticket_id,group_name,agent_name,brand_name,ticket_type,rating,comment,responded_at')
+      .select('ticket_id,group_name,agent_name,brand_name,ticket_type,rating,comment,responded_at,freshdesk_tags')
       .order('responded_at', { ascending: false })
       .range(from, from + 999)
     if (error) { console.error(error); break }
@@ -1034,6 +1039,14 @@ function updateTable(data) {
       <td>
         <button class="btn-analyze${rcaMap[r.ticket_id] ? ' has-rca' : ''}" id="abtn-${r.ticket_id}" onclick="analyzeTicket(${r.ticket_id})">${rcaMap[r.ticket_id] ? 'View RCA' : 'Analyze'}</button>
       </td>
+      <td><div class="fd-tags-cell">${(function(){
+        var tags = Array.isArray(r.freshdesk_tags) ? r.freshdesk_tags : []
+        var chips = []
+        if (tags.includes('Agent Sent AI Response')) chips.push('<span class="fd-tag tag-ai-response">🤖 AI Response</span>')
+        if (tags.includes('Delay CSAT'))             chips.push('<span class="fd-tag tag-delay-csat">⏱ Delay CSAT</span>')
+        if (tags.includes('Delay CSAT - Agent Select')) chips.push('<span class="fd-tag tag-delay-agent">⏱ Delay – Agent</span>')
+        return chips.join('') || '<span style="color:#cbd5e1;font-size:11px">—</span>'
+      })()}</div></td>
     </tr>`
   }).join('')
 
@@ -1044,7 +1057,7 @@ function updateTable(data) {
           <tr>
             <th>Ticket ID</th><th>Agent</th><th>Group</th>
             <th>Brand</th><th>Ticket Type</th>
-            <th>Customer Comment</th><th>Date</th><th>RCA</th>
+            <th>Customer Comment</th><th>Date</th><th>RCA</th><th>Tags</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
