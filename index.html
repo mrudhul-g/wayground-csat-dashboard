@@ -261,6 +261,24 @@
     .fd-tag.tag-delay-csat   { background: #fef3c7; color: #92400e; }
     .fd-tag.tag-delay-agent  { background: #dbeafe; color: #1e40af; }
     .fd-tags-cell { display: flex; flex-wrap: wrap; gap: 4px; }
+    /* Tags summary table */
+    .tags-sum-table { width:100%; border-collapse:collapse; font-size:12px; }
+    .tags-sum-table th { font-weight:700; padding:5px 8px; text-align:left; color:var(--muted); border-bottom:2px solid var(--border); font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
+    .tags-sum-table th.num, .tags-sum-table td.num { text-align:right; }
+    .tags-sum-table td { padding:8px 8px; border-bottom:1px solid var(--border); vertical-align:middle; }
+    .tags-sum-table tr:last-child td { border-bottom:none; }
+    .tags-sum-table .cnt { font-variant-numeric:tabular-nums; font-weight:700; }
+    .tags-sum-table .cnt.bad  { color:var(--bad); }
+    .tags-sum-table .cnt.good { color:var(--good); }
+    .tags-sum-table .cnt.ntrl { color:var(--warn); }
+    /* Tag filter bar */
+    .tag-filter-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:10px 0 6px; }
+    .tag-fbtn { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:4px 12px; border-radius:99px; border:1.5px solid var(--border); cursor:pointer; background:var(--card); color:var(--muted); transition:all .15s; }
+    .tag-fbtn:hover { border-color:#94a3b8; color:var(--text); }
+    .tag-fbtn.active.all-tag  { background:#e0e7ff; color:#3730a3; border-color:#c7d2fe; }
+    .tag-fbtn.active.ai-tag   { background:#ede9fe; color:#5b21b6; border-color:#c4b5fd; }
+    .tag-fbtn.active.dc-tag   { background:#fef3c7; color:#92400e; border-color:#fde68a; }
+    .tag-fbtn.active.da-tag   { background:#dbeafe; color:#1e40af; border-color:#bfdbfe; }
     .rca-section.good-s .rca-list li::before { content: '\2022'; color: var(--good); }
     .sev-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
     .sev-high   { background: var(--bad-bg);  color: var(--bad);  }
@@ -600,6 +618,13 @@
       <div class="chart-head">By Ticket Type</div>
       <canvas id="cTicketType" height="220"></canvas>
     </div>
+    <div class="chart-card">
+      <div class="chart-head">By Freshdesk Tag <small style="font-size:11px;font-weight:400;color:var(--muted)">all ratings</small></div>
+      <table class="tags-sum-table">
+        <thead><tr><th>Tag</th><th class="num">Bad</th><th class="num">Good</th><th class="num">Neutral</th><th class="num">Total</th></tr></thead>
+        <tbody id="tagsTableBody"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Loading…</td></tr></tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Bad Tickets Table -->
@@ -610,6 +635,13 @@
     <span class="bulk-rca-prog" id="bulkRcaProg" style="display:none"></span>
   </div>
   <div class="table-card">
+    <div class="tag-filter-bar" id="tagFilterBar" style="display:none">
+      <span style="font-size:11px;font-weight:700;color:var(--muted)">Filter by tag:</span>
+      <button class="tag-fbtn active all-tag" onclick="setTagFilter(null)">All</button>
+      <button class="tag-fbtn ai-tag" onclick="setTagFilter('Agent Sent AI Response')">🤖 AI Response</button>
+      <button class="tag-fbtn dc-tag" onclick="setTagFilter('Delay CSAT')">⏱ Delay CSAT</button>
+      <button class="tag-fbtn da-tag" onclick="setTagFilter('Delay CSAT - Agent Select')">⏱ Delay – Agent</button>
+    </div>
     <div id="tableWrap">
       <div class="state-box"><div class="spinner"></div>Loading data...</div>
     </div>
@@ -1012,12 +1044,25 @@ function updateTable(data) {
   badTicketMap = {}
   bad.forEach(r => { badTicketMap[r.ticket_id] = r })
 
+  // Show tag filter bar
+  const tagFilterBar = $('tagFilterBar')
+  if (tagFilterBar) tagFilterBar.style.display = bad.length ? 'flex' : 'none'
+
+  // Apply active tag filter
+  const filtered = activeTagFilter
+    ? bad.filter(r => Array.isArray(r.freshdesk_tags) && r.freshdesk_tags.includes(activeTagFilter))
+    : bad
+
   if (!bad.length) {
     $('tableWrap').innerHTML = `<div class="state-box">No bad-rated tickets in this period.</div>`
     return
   }
+  if (!filtered.length) {
+    $('tableWrap').innerHTML = `<div class="state-box">No bad-rated tickets match the selected tag filter.</div>`
+    return
+  }
 
-  const rows = bad.map(r => {
+  const rows = filtered.map(r => {
     const fdUrl = FD_DOMAIN
       ? `https://${FD_DOMAIN}.freshdesk.com/helpdesk/tickets/${r.ticket_id}`
       : null
@@ -1301,6 +1346,45 @@ function renderAnalysis(ticketId, row, data) {
 /* ====================================================================
    RENDER ALL
    ==================================================================== */
+/* -- Tags summary table ------------------------------------------------ */
+function updateTagsTable(f) {
+  const TAGS = [
+    { key: 'Agent Sent AI Response',    label: '🤖 AI Response', cls: 'fd-tag tag-ai-response' },
+    { key: 'Delay CSAT',                label: '⏱ Delay CSAT',  cls: 'fd-tag tag-delay-csat' },
+    { key: 'Delay CSAT - Agent Select', label: '⏱ Delay – Agent', cls: 'fd-tag tag-delay-agent' }
+  ]
+  const tbody = $('tagsTableBody')
+  if (!tbody) return
+  const html = TAGS.map(t => {
+    const matching = f.filter(r => Array.isArray(r.freshdesk_tags) && r.freshdesk_tags.includes(t.key))
+    const bad     = matching.filter(isBad).length
+    const good    = matching.filter(isGood).length
+    const neutral = matching.length - bad - good
+    const total   = matching.length
+    return `<tr>
+      <td><span class="${t.cls}">${t.label}</span></td>
+      <td class="num"><span class="cnt bad">${bad}</span></td>
+      <td class="num"><span class="cnt good">${good}</span></td>
+      <td class="num"><span class="cnt ntrl">${neutral}</span></td>
+      <td class="num"><span class="cnt" style="color:var(--text)">${total}</span></td>
+    </tr>`
+  }).join('')
+  tbody.innerHTML = html
+}
+
+/* -- Tag filter for bad-rated table ------------------------------------ */
+var activeTagFilter = null
+
+function setTagFilter(tag) {
+  activeTagFilter = tag
+  document.querySelectorAll('.tag-fbtn').forEach(b => b.classList.remove('active'))
+  if (!tag)                                  document.querySelector('.tag-fbtn.all-tag')?.classList.add('active')
+  if (tag === 'Agent Sent AI Response')      document.querySelector('.tag-fbtn.ai-tag')?.classList.add('active')
+  if (tag === 'Delay CSAT')                  document.querySelector('.tag-fbtn.dc-tag')?.classList.add('active')
+  if (tag === 'Delay CSAT - Agent Select')   document.querySelector('.tag-fbtn.da-tag')?.classList.add('active')
+  updateTable(getFiltered())
+}
+
 function renderAll() {
   const f = getFiltered()
   updateKPIs(f)
@@ -1308,6 +1392,7 @@ function renderAll() {
   updateBar('cGroup', 'group', f, 'group_name', 20)
   updateBar('cAgent', 'agent', f, 'agent_name', 12)
   updateBar('cTicketType', 'ticketType', f, 'ticket_type', 20)
+  updateTagsTable(f)
   updateTable(f)
 }
 
