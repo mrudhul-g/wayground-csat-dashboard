@@ -458,6 +458,14 @@
       transition: all .15s;
     }
     .btn-reanalyze:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-post-fd {
+      background: none; border: 1.5px solid #16a34a; border-radius: 7px;
+      padding: 5px 12px; font-size: 12px; cursor: pointer; color: #16a34a;
+      transition: all .15s; font-weight: 600;
+    }
+    .btn-post-fd:hover { background: #16a34a; color: #fff; }
+    .btn-post-fd:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-post-fd.posted { background: #dcfce7; color: #15803d; border-color: #86efac; cursor: default; }
 
     /* -- STATES ---------------------------------------------------- */
     .state-box { display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; padding:60px 20px; color:var(--muted); font-size:13px; }
@@ -952,7 +960,7 @@
   <!-- Charts -->
   <div class="charts-grid">
     <div class="chart-card">
-      <div class="chart-head">CSAT Trend <small>Weekly CSAT % &amp; volume</small></div>
+      <div class="chart-head">CSAT Trend <small>Yeekly CSAT % &amp; volume</small></div>
       <canvas id="cTrend" height="160"></canvas>
     </div>
     <div class="chart-card">
@@ -1318,7 +1326,7 @@
 
 <script>
 /* ====================================================================
-   CONFIG  ? edit FD_DOMAIN before opening
+   CONFIG  | edit FD_DOMAIN before opening
    ==================================================================== */
 let FD_DOMAIN     = 'waygroundorg'      // waygroundorg.freshdesk.com
 const EDGE_URL    = 'https://ltdjbhixbuwaxocsvasu.supabase.co/functions/v1/sync-csat'
@@ -1338,7 +1346,8 @@ const sb = supabase.createClient(SB_URL, SB_KEY, {
 })
 let ALL = []
 let badTicketMap = {}   // ticketId -> full row, used by analyzeTicket()
-let rcaMap = {}         // ticketId -> { analyzed_by, analyzed_at, severity } ? loaded from DB
+let rcaMap = {}         // ticketId -> { analyzed_by, analyzed_at, severity } — loaded from DB
+let rcaFullDataMap = {} // ticketId -> full API response (analysis + tags + meta)
 let charts = {}
 
 const $ = id => document.getElementById(id)
@@ -1517,7 +1526,7 @@ function updateBar(canvasId, key, data, field, cap) {
     data:{ labels, datasets:[{ label:'CSAT %', data:csat, backgroundColor:colors, borderRadius:5 }] },
     options:{
       indexAxis:'y', responsive:true,
-      plugins:{ legend:{lisplay:false},
+      plugins:{ legend:{display:false},
         tooltip:{ callbacks:{ label:ctx=>{
           const [,v]=sorted[ctx.dataIndex]
           return [`CSAT: ${ctx.raw}%`,`Good: ${v.g}  Bad: ${v.b}  Total: ${v.g+v.b}`]
@@ -1692,6 +1701,7 @@ async function analyzeTicket(ticketId, force = false) {
         severity:      data.analysis?.severity,
         tags:          data.tags || [],
       }
+      rcaFullDataMap[ticketId] = data  // store full response for Post to Freshdesk
     }
 
     renderAnalysis(ticketId, row, data)
@@ -1723,6 +1733,42 @@ async function analyzeTicket(ticketId, force = false) {
 async function reanalyzeTicket(ticketId) {
   closeModal()
   await analyzeTicket(ticketId, true)
+}
+
+async function postRcaToFreshdesk(ticketId) {
+  const btn = $(`postfd-${ticketId}`)
+  const data = rcaFullDataMap[ticketId]
+  if (!data || !data.analysis) {
+    alert('RCA data not loaded. Please view the RCA first.')
+    return
+  }
+  if (btn) { btn.disabled = true; btn.textContent = 'Posting...' }
+  try {
+    const a = data.analysis || {}
+    const params = new URLSearchParams({
+      action:                   'post_rca',
+      ticket_id:                String(ticketId),
+      severity:                 a.severity || 'medium',
+      user_query:               a.user_query || '',
+      agent_actions:            a.agent_actions || '',
+      agent_response_quality:   a.agent_response_quality || '',
+      agent_response_summary:   a.agent_response_summary || '',
+      customer_comment_analysis: a.customer_comment_analysis || '',
+      analyzed_by:              data.analyzed_by || '',
+      analyzed_at:              data.analyzed_at || '',
+      note_visibility:          'private',
+      possible_reasons:         JSON.stringify(Array.isArray(a.possible_reasons) ? a.possible_reasons : []),
+      improvement_suggestions:  JSON.stringify(Array.isArray(a.improvement_suggestions) ? a.improvement_suggestions : []),
+      tags:                     JSON.stringify(data.tags || []),
+    })
+    const res = await fetch(`${EDGE_URL}?${params}`, { headers: { ...authHeaders() } })
+    const result = await res.json()
+    if (!res.ok || result.error) throw new Error(result.error || `Server error ${res.status}`)
+    if (btn) { btn.textContent = '✓ Posted'; btn.classList.add('posted'); btn.disabled = true }
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.textContent = '📄 Post to Freshdesk' }
+    alert('Failed to post to Freshdesk: ' + err.message)
+  }
 }
 
 function fdTicketUrl(ticketId) {
@@ -1809,7 +1855,10 @@ function renderAnalysis(ticketId, row, data) {
   const footerHtml = `
     <div class="rca-footer">
       <span>${[savedLabel, analyzedBy, analyzedAt].filter(Boolean).join(' &nbsp;.&nbsp; ')}</span>
-      <button class="btn-reanalyze" onclick="reanalyzeTicket(${ticketId})">Re-analyze</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn-post-fd" id="postfd-${ticketId}" onclick="postRcaToFreshdesk(${ticketId})">&#128196; Post to Freshdesk</button>
+        <button class="btn-reanalyze" onclick="reanalyzeTicket(${ticketId})">Re-analyze</button>
+      </div>
     </div>`
 
   $('modalBody').innerHTML = `
@@ -1998,7 +2047,7 @@ async function restoreSession() {
 }
 
 /* ====================================================================
-   AUTH  ?  Supabase Auth (email + password)
+   AUTH  |  Supabase Auth (email + password)
    ==================================================================== */
 let loggedInAgent = null   // { id, name, email, initials, role, token }
 
