@@ -864,6 +864,182 @@
 .mr-table td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:top}
 .mr-table tr:last-child td{border-bottom:none}.mr-th-sort{cursor:pointer;user-select:none;white-space:nowrap;transition:background .15s}.mr-th-sort:hover{background:rgba(79,70,229,.18)}.mr-sort-icon{opacity:.4;font-size:11px;margin-left:4px}.mr-th-sort.mr-sort-on .mr-sort-icon{opacity:1;color:#818cf8}.mr-footer{margin-top:20px;display:flex;justify-content:flex-end}
 .section-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.btn-bulk-rca{display:none;align-items:center;gap:6px;padding:5px 14px;font-size:12px;font-weight:600;border-radius:8px;border:none;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;cursor:pointer;transition:opacity .2s}.btn-bulk-rca:hover{opacity:.85}.btn-bulk-rca:disabled{opacity:.5;cursor:not-allowed}.bulk-rca-prog{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
+
+/* ====================================================================
+   ADMIN CENTER PAGE
+   ==================================================================== */
+.admin-center-page {
+  max-width: 1100px; margin: 0 auto; padding: 28px 32px 64px;
+  display: none;
+}
+
+/* -- Admin Center hero header ---- */
+.ac-hero {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  border-radius: var(--radius); padding: 24px 28px; margin-bottom: 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 4px 16px rgba(79,70,229,.25);
+}
+.ac-hero-title { color: #fff; font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
+.ac-hero-sub   { color: rgba(255,255,255,.75); font-size: 13px; margin-top: 3px; }
+
+/* -- Sub-tabs ---- */
+.ac-subtabs {
+  display: flex; gap: 0; border-bottom: 2px solid var(--border);
+  margin-bottom: 24px;
+}
+.ac-subtab {
+  padding: 10px 24px; border: none; background: none; cursor: pointer;
+  font-size: 13px; font-weight: 600; color: var(--muted);
+  border-bottom: 3px solid transparent; margin-bottom: -2px;
+  transition: all .15s;
+}
+.ac-subtab:hover { color: var(--text); }
+.ac-subtab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+/* -- Section cards ---- */
+.ac-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.ac-card-head {
+  padding: 18px 22px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; gap: 12px;
+}
+.ac-card-icon  { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.ac-card-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.ac-card-sub   { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.ac-card-body  { padding: 20px 22px; }
+
+/* -- Inline members list ---- */
+.ac-member-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.ac-member-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--bg); gap: 12px;
+}
+.ac-member-info { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.ac-member-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff; font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ac-member-name  { font-size: 13px; font-weight: 600; color: var(--text); }
+.ac-member-email { font-size: 11px; color: var(--muted); }
+.ac-member-role  { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; flex-shrink: 0; }
+.ac-member-role.role-admin { background: #ede9fe; color: #5b21b6; }
+.ac-member-role.role-agent { background: #f0fdf4; color: #166534; }
+.ac-member-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* -- Add member form ---- */
+.ac-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+@media(max-width:600px){ .ac-form-grid { grid-template-columns: 1fr; } }
+.ac-form-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; display: block; margin-bottom: 5px; }
+.ac-form-input {
+  width: 100%; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: 13px; color: var(--text); background: var(--bg);
+  transition: border-color .15s; outline: none;
+}
+.ac-form-input:focus { border-color: var(--primary); background: #fff; }
+.ac-form-msg  { font-size: 12px; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; display: none; }
+.ac-form-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.ac-form-error   { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+/* -- QA Access Filters ---- */
+.ac-filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media(max-width:700px){ .ac-filter-grid { grid-template-columns: 1fr; } }
+
+.ac-check-group-label {
+  font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase;
+  letter-spacing: .06em; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;
+}
+.ac-check-list {
+  border: 1.5px solid var(--border); border-radius: 10px; padding: 8px;
+  max-height: 220px; overflow-y: auto; background: var(--bg);
+  scrollbar-width: thin; scrollbar-color: #c7d2fe transparent;
+}
+.ac-check-list::-webkit-scrollbar { width: 4px; }
+.ac-check-list::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 99px; }
+
+.ac-check-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 6px; cursor: pointer; user-select: none;
+  transition: background .1s;
+}
+.ac-check-item:hover { background: rgba(79,70,229,.06); }
+.ac-check-item input[type="checkbox"] { accent-color: var(--primary); width: 14px; height: 14px; cursor: pointer; }
+.ac-check-item-label { font-size: 13px; color: var(--text); flex: 1; }
+.ac-filter-hint {
+  font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5;
+  padding: 8px 12px; background: #fef9c3; border-radius: 8px; border: 1px solid #fde68a;
+}
+.ac-filter-note { font-size: 11px; color: var(--muted); margin-top: 6px; font-style: italic; }
+.ac-filter-save-row { margin-top: 16px; display: flex; align-items: center; gap: 12px; }
+.ac-filter-saved-msg { font-size: 12px; color: var(--good); font-weight: 600; opacity: 0; transition: opacity .4s; }
+.ac-filter-saved-msg.show { opacity: 1; }
+
+/* -- Inline prompt sections ---- */
+.ac-prompt-sections { display: flex; flex-direction: column; gap: 8px; }
+.ac-psec {
+  border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden;
+  transition: border-color .15s;
+}
+.ac-psec.open { border-color: #c7d2fe; }
+.ac-psec-head {
+  display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+  cursor: pointer; background: var(--card); user-select: none;
+  transition: background .1s;
+}
+.ac-psec-head:hover { background: var(--primary-lt); }
+.ac-psec.open .ac-psec-head { background: var(--primary-lt); }
+.ac-psec-icon  { font-size: 16px; flex-shrink: 0; }
+.ac-psec-meta  { flex: 1; min-width: 0; }
+.ac-psec-label { font-size: 13px; font-weight: 700; color: var(--text); }
+.ac-psec-hint  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.ac-psec-cond  { font-size: 10px; font-weight: 600; background: #fef3c7; color: #92400e; padding: 2px 7px; border-radius: 99px; margin-left: 6px; }
+.ac-psec-chevron { color: var(--muted); font-size: 11px; transition: transform .2s; }
+.ac-psec.open .ac-psec-chevron { transform: rotate(180deg); }
+.ac-psec-body {
+  display: none; padding: 0 16px 14px;
+  background: #fafbff;
+}
+.ac-psec.open .ac-psec-body { display: block; }
+.ac-psec-textarea {
+  width: 100%; min-height: 110px; padding: 10px 12px;
+  border: 1.5px solid var(--border); border-radius: 8px;
+  font-family: inherit; font-size: 12.5px; line-height: 1.6;
+  color: var(--text); background: var(--card); resize: vertical;
+  transition: border-color .15s; margin-top: 10px;
+}
+.ac-psec-textarea:focus { outline: none; border-color: var(--primary); }
+.ac-psec-footer { display: flex; justify-content: flex-end; margin-top: 6px; }
+.ac-psec-reset { font-size: 11px; font-weight: 600; color: var(--muted); background: none; border: none; cursor: pointer; padding: 2px 4px; }
+.ac-psec-reset:hover { color: var(--primary); }
+.ac-prompt-save-row { margin-top: 16px; display: flex; align-items: center; gap: 12px; }
+.ac-prompt-saved-msg { font-size: 12px; color: var(--good); font-weight: 600; opacity: 0; transition: opacity .4s; }
+.ac-prompt-saved-msg.show { opacity: 1; }
+
+/* -- Backfill section ---- */
+.ac-backfill-status { font-size: 12px; color: var(--muted); margin-bottom: 10px; min-height: 18px; }
+.ac-backfill-bar-wrap { background: var(--bg); border-radius: 4px; overflow: hidden; height: 6px; margin-bottom: 6px; }
+.ac-backfill-bar { background: #6c63ff; height: 100%; width: 0%; transition: width .5s; }
+.ac-backfill-log { font-size: 11px; color: var(--muted); max-height: 80px; overflow-y: auto; font-family: monospace; }
+.ac-actions-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+/* -- QA active filter badge (shown in QA page when admin filters are active) ---- */
+.qa-admin-filter-bar {
+  display: none; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 8px 14px; background: #ede9fe; border: 1.5px solid #c4b5fd;
+  border-radius: 10px; margin-bottom: 12px; font-size: 12px;
+}
+.qa-admin-filter-bar.visible { display: flex; }
+.qa-admin-filter-bar-label { font-weight: 700; color: #5b21b6; }
+.qa-admin-filter-chip {
+  background: #fff; border: 1px solid #c4b5fd; border-radius: 99px;
+  padding: 2px 10px; font-size: 11px; font-weight: 600; color: #5b21b6;
+}
 </style>
 </head>
 <body>
@@ -877,8 +1053,9 @@
 
   <!-- Nav Tabs -->
   <div class="nav-tabs">
-    <button class="nav-tab active" id="navCsat" onclick="switchPage('csat')">📊 CSAT Dashboard</button>
-    <button class="nav-tab"        id="navQa"   onclick="switchPage('qa')">✅ Quality Audit</button>
+    <button class="nav-tab active" id="navCsat"  onclick="switchPage('csat')">📊 CSAT Dashboard</button>
+    <button class="nav-tab"        id="navQa"    onclick="switchPage('qa')">✅ Quality Audit</button>
+    <button class="nav-tab"        id="navAdmin" onclick="switchPage('admin')" style="display:none">⚙️ Admin Center</button>
   </div>
 
   <div style="display:flex;align-items:center;gap:12px">
@@ -889,13 +1066,6 @@
     <button class="btn-login" id="headerLoginBtn" onclick="openLoginModal()">
       Agent Login
     </button>
-
-    <!-- Admin-only Manage Members button (shown next to chip when admin is logged in) -->
-    <button class="btn-manage-members" id="manageMembersBtn" onclick="openAdminPanel()">
-      Manage Members
-    </button>
-      <!-- Admin-only Multiple Ratings button -->
-      <button class="btn-manage-members" id="multipleRatingsBtn" onclick="openMultipleRatings()" style="display:none">&#9888;&#65039; Multiple Ratings</button>
 
     <!-- Logged-in state (hidden until login) -->
     <div class="agent-chip" id="headerAgentChip" style="display:none">
@@ -960,7 +1130,7 @@
   <!-- Charts -->
   <div class="charts-grid">
     <div class="chart-card">
-      <div class="chart-head">CSAT Trend <small>Yeekly CSAT % &amp; volume</small></div>
+      <div class="chart-head">CSAT Trend <small>Weekly CSAT % &amp; volume</small></div>
       <canvas id="cTrend" height="160"></canvas>
     </div>
     <div class="chart-card">
@@ -1021,6 +1191,13 @@
 <!-- -- QUALITY AUDIT PAGE -------------------------------------------- -->
 <div class="qa-page" id="qaPage">
 
+  <!-- Admin filter badge (shown when admin has set access filters) -->
+  <div class="qa-admin-filter-bar" id="qaAdminFilterBar">
+    <span class="qa-admin-filter-bar-label">⚙️ Admin Filters Active:</span>
+    <span id="qaAdminFilterChips"></span>
+    <span style="color:#7c3aed;font-size:11px;margin-left:4px">— configure in Admin Center → Quality Audit</span>
+  </div>
+
   <!-- Filter / search bar -->
   <div class="qa-filter-card">
     <div class="qa-search-wrap">
@@ -1040,7 +1217,6 @@
     </div>
     <button class="btn-ghost" onclick="resetQaFilters()">Reset</button>
     <span class="qa-meta" id="qaMeta"></span>
-    <button class="btn-prompt-config" id="btnPromptConfig" onclick="openPconfig()" title="Configure audit prompt" style="display:none">⚙ Prompt</button>
   </div>
 
   <!-- Table -->
@@ -1053,6 +1229,183 @@
   </div>
 
 </div>
+
+<!-- -- ADMIN CENTER PAGE ---------------------------------------------- -->
+<div class="admin-center-page" id="adminPage">
+
+  <div class="ac-hero">
+    <div>
+      <div class="ac-hero-title">⚙️ Admin Center</div>
+      <div class="ac-hero-sub">Configure dashboard settings, manage members, and control Quality Audit behaviour</div>
+    </div>
+  </div>
+
+  <!-- Sub-tabs -->
+  <div class="ac-subtabs">
+    <button class="ac-subtab active" id="acTabCsat" onclick="switchAdminTab('csat')">📊 CSAT Dashboard</button>
+    <button class="ac-subtab"        id="acTabQa"   onclick="switchAdminTab('qa')">✅ Quality Audit</button>
+  </div>
+
+  <!-- ============================================================
+       CSAT DASHBOARD ADMIN SUB-SECTION
+       ============================================================ -->
+  <div id="acCsatSection">
+
+    <!-- Members Management -->
+    <div class="ac-card">
+      <div class="ac-card-head">
+        <div class="ac-card-icon">👥</div>
+        <div>
+          <div class="ac-card-title">Members Management</div>
+          <div class="ac-card-sub">View, add, and remove dashboard members. Reset passwords as needed.</div>
+        </div>
+      </div>
+      <div class="ac-card-body">
+        <!-- Messages -->
+        <div class="ac-form-msg ac-form-success" id="acMemberMsg"></div>
+        <div class="ac-form-msg ac-form-error"   id="acMemberErr"></div>
+
+        <!-- Member list -->
+        <div id="acMemberListWrap" style="margin-bottom:20px">
+          <div style="color:var(--muted);font-size:13px">Loading members...</div>
+        </div>
+
+        <!-- Add new member -->
+        <div style="border-top:1px solid var(--border);padding-top:18px;margin-top:4px">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px">Add New Member</div>
+          <div class="ac-form-grid">
+            <div>
+              <label class="ac-form-label">Full Name</label>
+              <input class="ac-form-input" type="text"     id="acNewName"     placeholder="Jane Smith" />
+            </div>
+            <div>
+              <label class="ac-form-label">Email</label>
+              <input class="ac-form-input" type="email"    id="acNewEmail"    placeholder="jane@example.com" />
+            </div>
+          </div>
+          <div style="max-width:340px">
+            <label class="ac-form-label">Password</label>
+            <input class="ac-form-input" type="password" id="acNewPassword" placeholder="Min 8 characters" style="margin-bottom:12px" />
+          </div>
+          <button class="btn-primary" id="acCreateMemberBtn" onclick="acCreateMember()" style="padding:9px 20px">Add Member</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Multiple Ratings -->
+    <div class="ac-card">
+      <div class="ac-card-head">
+        <div class="ac-card-icon">⚠️</div>
+        <div>
+          <div class="ac-card-title">Multiple Ratings</div>
+          <div class="ac-card-sub">Tickets where a customer submitted the CSAT survey more than once. Identify rage-clicks, sentiment changes, and patterns.</div>
+        </div>
+      </div>
+      <div class="ac-card-body">
+        <button class="btn-primary" onclick="openMultipleRatings()" style="padding:9px 20px">⚠️ View Multiple Ratings Report</button>
+      </div>
+    </div>
+
+    <!-- AI Response Backfill -->
+    <div class="ac-card">
+      <div class="ac-card-head">
+        <div class="ac-card-icon">🤖</div>
+        <div>
+          <div class="ac-card-title">AI Response Backfill</div>
+          <div class="ac-card-sub">Scans Freshdesk conversations to detect tickets where Ajith Pawar sent a reply and marks them as AI responses.</div>
+        </div>
+      </div>
+      <div class="ac-card-body">
+        <div class="ac-backfill-status" id="acBackfillStatus">Loading status...</div>
+        <div id="acBackfillProgress" style="display:none;margin-bottom:10px">
+          <div class="ac-backfill-bar-wrap"><div class="ac-backfill-bar" id="acBackfillBar"></div></div>
+          <div class="ac-backfill-log" id="acBackfillLog"></div>
+        </div>
+        <div class="ac-actions-row">
+          <button class="btn-primary"  id="acBackfillBtn"     onclick="acStartBackfill('Bad')" style="padding:8px 14px;font-size:12px">Run Backfill (Bad-rated first)</button>
+          <button class="btn-ghost"    id="acBackfillAllBtn"  onclick="acStartBackfill(null)"  style="padding:8px 14px;font-size:12px">Run All Tickets</button>
+          <button class="btn-ghost"    id="acBackfillStopBtn" onclick="acStopBackfill()"       style="padding:8px 14px;font-size:12px;display:none;color:#f87171">Stop</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /acCsatSection -->
+
+  <!-- ============================================================
+       QUALITY AUDIT ADMIN SUB-SECTION
+       ============================================================ -->
+  <div id="acQaSection" style="display:none">
+
+    <!-- QA Access Filters -->
+    <div class="ac-card">
+      <div class="ac-card-head">
+        <div class="ac-card-icon">🎛️</div>
+        <div>
+          <div class="ac-card-title">QA Dashboard Access Filters</div>
+          <div class="ac-card-sub">Control which tickets appear in the Quality Audit tab. Select the Ticket Types and Groups to include. Leaving a list empty means <strong>show all</strong> values for that field.</div>
+        </div>
+      </div>
+      <div class="ac-card-body">
+        <div class="ac-filter-hint">
+          💡 These filters restrict what all users see in the Quality Audit tab. For example, selecting "Bug" and "Sales" under Ticket Type means only Bug and Sales tickets will appear for audit.
+        </div>
+        <div class="ac-filter-grid" style="margin-top:16px">
+          <!-- Ticket Type -->
+          <div>
+            <div class="ac-check-group-label">
+              <span>Ticket Type</span>
+              <button class="ac-psec-reset" onclick="acClearFilter('type')">Clear all</button>
+            </div>
+            <div class="ac-check-list" id="acFilterTypeList">
+              <div style="color:var(--muted);font-size:12px;padding:8px">Loading…</div>
+            </div>
+            <div class="ac-filter-note" id="acFilterTypeNote">0 selected (showing all)</div>
+          </div>
+          <!-- Group -->
+          <div>
+            <div class="ac-check-group-label">
+              <span>Group</span>
+              <button class="ac-psec-reset" onclick="acClearFilter('group')">Clear all</button>
+            </div>
+            <div class="ac-check-list" id="acFilterGroupList">
+              <div style="color:var(--muted);font-size:12px;padding:8px">Loading…</div>
+            </div>
+            <div class="ac-filter-note" id="acFilterGroupNote">0 selected (showing all)</div>
+          </div>
+        </div>
+        <div class="ac-filter-save-row">
+          <button class="btn-primary" onclick="acSaveQaFilters()" style="padding:8px 18px">Save Filters</button>
+          <button class="btn-ghost"   onclick="acClearAllFilters()" style="padding:8px 14px">Clear All</button>
+          <span class="ac-filter-saved-msg" id="acFilterSavedMsg">✓ Filters saved</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prompt Configuration -->
+    <div class="ac-card">
+      <div class="ac-card-head">
+        <div class="ac-card-icon">📝</div>
+        <div>
+          <div class="ac-card-title">Quality Audit Prompt Configuration</div>
+          <div class="ac-card-sub">Customise the AI instructions for each section of the quality audit. Changes are saved to your browser and applied to all future audits you run.</div>
+        </div>
+      </div>
+      <div class="ac-card-body">
+        <div class="ac-prompt-sections" id="acPromptSections">
+          <!-- Sections injected by JS -->
+        </div>
+        <div class="ac-prompt-save-row">
+          <button class="btn-primary" onclick="acSavePromptConfig()" style="padding:8px 18px">Save Prompt Config</button>
+          <button class="btn-ghost"   onclick="acResetAllSections()" style="padding:8px 14px">↺ Reset All to Default</button>
+          <button class="btn-ghost"   onclick="togglePromptPreview()" style="padding:8px 14px">👁 Preview Full Prompt</button>
+          <span class="ac-prompt-saved-msg" id="acPromptSavedMsg">✓ Saved</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /acQaSection -->
+
+</div><!-- /adminPage -->
 
 <!-- -- MODAL ----------------------------------------------------------- -->
 <!-- -- LOGIN MODAL ---------------------------------------------------- -->
@@ -1326,7 +1679,7 @@
 
 <script>
 /* ====================================================================
-   CONFIG  | edit FD_DOMAIN before opening
+   CONFIG  ? edit FD_DOMAIN before opening
    ==================================================================== */
 let FD_DOMAIN     = 'waygroundorg'      // waygroundorg.freshdesk.com
 const EDGE_URL    = 'https://ltdjbhixbuwaxocsvasu.supabase.co/functions/v1/sync-csat'
@@ -1709,9 +2062,9 @@ async function analyzeTicket(ticketId, force = false) {
     $('modalBody').innerHTML = `
       <div class="modal-body">
         <div class="state-box" style="color:var(--bad)">
-          ?? ${esc(err.message)}<br>
+          ⚠ ${esc(err.message)}<br>
           <small style="color:var(--muted);margin-top:8px;display:block">
-            Make sure the Edge Function is updated and ANTHROPIC_API_KEY is set in Supabase.
+            RCA is powered by the Compass API. Check the API configuration in Admin Center → API if the error persists.
           </small>
         </div>
       </div>`
@@ -1762,6 +2115,33 @@ async function postRcaToFreshdesk(ticketId) {
       tags:                     JSON.stringify(data.tags || []),
     })
     const res = await fetch(`${EDGE_URL}?${params}`, { headers: { ...authHeaders() } })
+    const result = await res.json()
+    if (!res.ok || result.error) throw new Error(result.error || `Server error ${res.status}`)
+    if (btn) { btn.textContent = '✓ Posted'; btn.classList.add('posted'); btn.disabled = true }
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.textContent = '📄 Post to Freshdesk' }
+    alert('Failed to post to Freshdesk: ' + err.message)
+  }
+}
+
+async function postQaToFreshdesk(ticketId) {
+  const btn = $(`qapostfd-${ticketId}`)
+  const data = qaAuditMap[ticketId]
+  if (!data || !data.response) {
+    alert('QA audit data not loaded. Please view the audit first.')
+    return
+  }
+  if (btn) { btn.disabled = true; btn.textContent = 'Posting...' }
+  try {
+    const ts = data.timestamp
+      ? new Date(data.timestamp).toLocaleString('en-GB', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
+      : new Date().toLocaleString('en-GB', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
+    const bodyHtml = `<div style="font-family:sans-serif;font-size:14px;line-height:1.6;color:#1e293b"><h3 style="margin:0 0 4px;font-size:16px">&#128269; Quality Audit Report</h3><div style="margin-bottom:12px">${renderMarkdown(data.response)}</div><hr style="border:none;border-top:1px solid #e2e8f0;margin:12px 0"/><p style="font-size:11px;color:#94a3b8;margin:0">Quality Audit posted via CSAT Dashboard &middot; ${ts}</p></div>`
+    const res = await fetch(`${EDGE_URL}?action=post_note&ticket_id=${ticketId}`, {
+      method: 'POST',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body_html: bodyHtml })
+    })
     const result = await res.json()
     if (!res.ok || result.error) throw new Error(result.error || `Server error ${res.status}`)
     if (btn) { btn.textContent = '✓ Posted'; btn.classList.add('posted'); btn.disabled = true }
@@ -1828,8 +2208,8 @@ function renderAnalysis(ticketId, row, data) {
 
   const warnHtml = err ? `
     <div class="no-anthropic-warn">
-      ?? ${esc(err)}<br>
-      <small>Add <code>ANTHROPIC_API_KEY</code> to Supabase -> Edge Functions -> Environment Variables for full AI-powered RCA.</small>
+      ⚠ ${esc(err)}<br>
+      <small>Check the API configuration in Admin Center → API if this error persists.</small>
     </div>` : ''
 
   // Comment analysis section (shown if CSAT comment exists; or if no comment, shows conversation-based analysis)
@@ -2047,7 +2427,7 @@ async function restoreSession() {
 }
 
 /* ====================================================================
-   AUTH  |  Supabase Auth (email + password)
+   AUTH  ?  Supabase Auth (email + password)
    ==================================================================== */
 let loggedInAgent = null   // { id, name, email, initials, role, token }
 
@@ -2156,25 +2536,25 @@ async function loginUser() {
 
 function renderAgentChip() {
   if (loggedInAgent) {
-    $('headerLoginBtn').style.display      = 'none'
-    $('headerAgentChip').style.display     = 'flex'
-    $('agentInitials').textContent         = loggedInAgent.initials
-    $('agentDisplayName').textContent      = loggedInAgent.name
-    $('agentDisplayEmail').textContent     = loggedInAgent.email
-    // Show Manage Members button only for admins
-    const isAdmin = loggedInAgent.token === EDGE_SECRET
-    $('manageMembersBtn').style.display    = loggedInAgent.role === 'admin' ? 'flex' : 'none'
-    $('multipleRatingsBtn').style.display = loggedInAgent.role === 'admin' ? 'flex' : 'none'
-    $('bulkRcaBtn').style.display        = loggedInAgent.role === 'admin' ? 'inline-flex' : 'none'
-    // Prompt config button: admin-only
-    $('btnPromptConfig').style.display   = isAdmin ? 'inline-flex' : 'none'
+    $('headerLoginBtn').style.display  = 'none'
+    $('headerAgentChip').style.display = 'flex'
+    $('agentInitials').textContent     = loggedInAgent.initials
+    $('agentDisplayName').textContent  = loggedInAgent.name
+    $('agentDisplayEmail').textContent = loggedInAgent.email
+    const isAdmin = loggedInAgent.role === 'admin'
+    // Admin Center nav tab: show only for admins
+    if ($('navAdmin')) $('navAdmin').style.display = isAdmin ? 'inline-block' : 'none'
+    // Bulk RCA button
+    $('bulkRcaBtn').style.display = isAdmin ? 'inline-flex' : 'none'
   } else {
-    $('headerLoginBtn').style.display      = 'flex'
-    $('headerAgentChip').style.display     = 'none'
-    $('manageMembersBtn').style.display    = 'none'
-    $('multipleRatingsBtn').style.display = 'none'
-    $('bulkRcaBtn').style.display        = 'none'
-    $('btnPromptConfig').style.display   = 'none'
+    $('headerLoginBtn').style.display  = 'flex'
+    $('headerAgentChip').style.display = 'none'
+    if ($('navAdmin')) $('navAdmin').style.display = 'none'
+    $('bulkRcaBtn').style.display = 'none'
+    // If on admin page, redirect to csat
+    if ($('adminPage') && $('adminPage').style.display !== 'none') {
+      switchPage('csat')
+    }
   }
 }
 
@@ -2183,6 +2563,14 @@ async function logout() {
   await sb.auth.signOut()
   loggedInAgent = null
   $('fAgent').value = ''
+  // If on admin page, redirect to csat
+  if ($('adminPage') && $('adminPage').style.display !== 'none') {
+    $('adminPage').style.display = 'none'
+    $('csatPage').style.display  = 'block'
+    $('navAdmin').classList.remove('active')
+    $('navCsat').classList.add('active')
+    $('recMeta').style.display = ''
+  }
   renderAgentChip()
   renderAll()
 }
@@ -2604,34 +2992,68 @@ async function confirmAdminResetPw() {
 
 /* -- Page Navigation ------------------------------------------------- */
 function switchPage(page) {
-  if (page === 'qa' && !loggedInAgent) {
+  if ((page === 'qa' || page === 'admin') && !loggedInAgent) {
     openLoginModal()
     return
   }
-  const csatPage = $('csatPage')
-  const qaPage   = $('qaPage')
-  const navCsat  = $('navCsat')
-  const navQa    = $('navQa')
+  if (page === 'admin' && loggedInAgent?.role !== 'admin') return
+
+  const csatPage  = $('csatPage')
+  const qaPage    = $('qaPage')
+  const adminPage = $('adminPage')
+  const navCsat   = $('navCsat')
+  const navQa     = $('navQa')
+  const navAdmin  = $('navAdmin')
+
+  // Hide all pages
+  csatPage.style.display  = 'none'
+  qaPage.style.display    = 'none'
+  adminPage.style.display = 'none'
+  navCsat.classList.remove('active')
+  navQa.classList.remove('active')
+  if (navAdmin) navAdmin.classList.remove('active')
+
   if (page === 'csat') {
     csatPage.style.display = 'block'
-    qaPage.style.display   = 'none'
     navCsat.classList.add('active')
-    navQa.classList.remove('active')
     $('recMeta').style.display = ''
-  } else {
-    csatPage.style.display = 'none'
-    qaPage.style.display   = 'block'
-    navCsat.classList.remove('active')
+  } else if (page === 'qa') {
+    qaPage.style.display = 'block'
     navQa.classList.add('active')
     $('recMeta').style.display = 'none'
+    updateQaAdminFilterBadge()
     try { populateQaDropdowns() } catch(e) { console.error('populateQaDropdowns error:', e) }
     try { renderQaTable() }       catch(e) { console.error('renderQaTable error:', e) }
+  } else if (page === 'admin') {
+    adminPage.style.display = 'block'
+    if (navAdmin) navAdmin.classList.add('active')
+    $('recMeta').style.display = 'none'
+    initAdminPage()
   }
 }
 
 /* ====================================================================
    QUALITY AUDIT
    ==================================================================== */
+/* ====================================================================
+   QA ADMIN ACCESS FILTERS
+   ==================================================================== */
+var QA_ADMIN_FILTERS_KEY = 'qa_admin_access_v1'
+
+function loadQaAdminFilters() {
+  try {
+    var raw = localStorage.getItem(QA_ADMIN_FILTERS_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch(e) {}
+  return { ticket_types: [], groups: [] }
+}
+
+function saveQaAdminFilters(filters) {
+  try {
+    localStorage.setItem(QA_ADMIN_FILTERS_KEY, JSON.stringify(filters))
+  } catch(e) {}
+}
+
 function getQaData() {
   if (!ALL || !ALL.length) return []
   // Deduplicate by ticket_id — keep latest entry per ticket
@@ -2644,7 +3066,17 @@ function getQaData() {
       map[r.ticket_id] = r
     }
   }
-  return Object.values(map)
+  var all = Object.values(map)
+
+  // Apply admin access filters
+  var adminFilters = loadQaAdminFilters()
+  if (adminFilters.ticket_types && adminFilters.ticket_types.length > 0) {
+    all = all.filter(function(r) { return adminFilters.ticket_types.indexOf(r.ticket_type || '') !== -1 })
+  }
+  if (adminFilters.groups && adminFilters.groups.length > 0) {
+    all = all.filter(function(r) { return adminFilters.groups.indexOf(r.group_name || '') !== -1 })
+  }
+  return all
 }
 
 function populateQaDropdowns() {
@@ -2756,6 +3188,341 @@ function resetQaFilters() {
   var a = document.getElementById('qaAgent');  if (a) a.value = ''
   var b = document.getElementById('qaBrand');  if (b) b.value = ''
   renderQaTable()
+}
+
+/* ====================================================================
+   QA ADMIN FILTER BADGE (shown in QA page header when filters active)
+   ==================================================================== */
+function updateQaAdminFilterBadge() {
+  var bar       = document.getElementById('qaAdminFilterBar')
+  var chipsEl   = document.getElementById('qaAdminFilterChips')
+  if (!bar || !chipsEl) return
+  var f = loadQaAdminFilters()
+  var chips = []
+  if (f.ticket_types && f.ticket_types.length > 0) {
+    f.ticket_types.forEach(function(t) {
+      chips.push('<span class="qa-admin-filter-chip">Type: ' + esc(t) + '</span>')
+    })
+  }
+  if (f.groups && f.groups.length > 0) {
+    f.groups.forEach(function(g) {
+      chips.push('<span class="qa-admin-filter-chip">Group: ' + esc(g) + '</span>')
+    })
+  }
+  if (chips.length > 0) {
+    chipsEl.innerHTML = chips.join(' ')
+    bar.classList.add('visible')
+  } else {
+    bar.classList.remove('visible')
+  }
+}
+
+/* ====================================================================
+   ADMIN CENTER
+   ==================================================================== */
+var _acBackfillRunning = false
+var _acBackfillStop    = false
+
+function initAdminPage() {
+  // Default to CSAT sub-tab when opening Admin Center
+  switchAdminTab('csat')
+}
+
+function switchAdminTab(tab) {
+  var csatSec = document.getElementById('acCsatSection')
+  var qaSec   = document.getElementById('acQaSection')
+  var tabCsat = document.getElementById('acTabCsat')
+  var tabQa   = document.getElementById('acTabQa')
+
+  if (tab === 'csat') {
+    csatSec.style.display = 'block'
+    qaSec.style.display   = 'none'
+    tabCsat.classList.add('active')
+    tabQa.classList.remove('active')
+    acLoadMembers()
+    acLoadBackfillStatus()
+  } else {
+    csatSec.style.display = 'none'
+    qaSec.style.display   = 'block'
+    tabCsat.classList.remove('active')
+    tabQa.classList.add('active')
+    acPopulateQaFilters()
+    acBuildPromptSections()
+  }
+}
+
+/* ---- Members Management ---- */
+async function acLoadMembers() {
+  var wrap = document.getElementById('acMemberListWrap')
+  if (!wrap) return
+  wrap.innerHTML = '<div style="color:var(--muted);font-size:13px">Loading members...</div>'
+  try {
+    var params = new URLSearchParams({ action: 'list_agents' })
+    var res  = await fetch(EDGE_URL + '?' + params, { headers: authHeaders() })
+    var data = await res.json()
+    if (!res.ok || data.error) throw new Error(data.error || 'Could not load members.')
+    var agents = data.agents || []
+    if (!agents.length) { wrap.innerHTML = '<div style="color:var(--muted);font-size:13px">No members yet.</div>'; return }
+    wrap.innerHTML = '<ul class="ac-member-list">' + agents.map(function(a) {
+      var initials = a.name.split(' ').map(function(w){return w[0]}).join('').slice(0,2).toUpperCase()
+      var isAdmin  = a.role === 'admin'
+      return '<li class="ac-member-item">'
+        + '<div class="ac-member-info">'
+        + '<div class="ac-member-avatar">' + initials + '</div>'
+        + '<div><div class="ac-member-name">' + esc(a.name) + '</div><div class="ac-member-email">' + esc(a.email) + '</div></div>'
+        + '<span class="ac-member-role ' + (isAdmin ? 'role-admin' : 'role-agent') + '">' + a.role + '</span>'
+        + '</div>'
+        + '<div class="ac-member-actions">'
+        + '<button class="btn-reset-pw" onclick="openResetPwModal(\'' + a.id + '\',\'' + esc(a.name) + '\',\'' + esc(a.email) + '\')" title="Reset password">Reset PW</button>'
+        + (isAdmin ? '' : '<button class="btn-delete-agent" onclick="acDeleteMember(\'' + a.id + '\',\'' + esc(a.name) + '\')">Remove</button>')
+        + '</div>'
+        + '</li>'
+    }).join('') + '</ul>'
+  } catch(err) {
+    wrap.innerHTML = '<div style="color:var(--bad);font-size:13px">' + esc(err.message) + '</div>'
+  }
+}
+
+async function acCreateMember() {
+  var name     = document.getElementById('acNewName').value.trim()
+  var email    = document.getElementById('acNewEmail').value.trim().toLowerCase()
+  var password = document.getElementById('acNewPassword').value
+  var errEl    = document.getElementById('acMemberErr')
+  var msgEl    = document.getElementById('acMemberMsg')
+  errEl.style.display = 'none'
+  msgEl.style.display = 'none'
+  if (!name)                          { errEl.textContent='Name is required.'; errEl.style.display='block'; return }
+  if (!email)                         { errEl.textContent='Email is required.'; errEl.style.display='block'; return }
+  if (!password || password.length<8) { errEl.textContent='Password must be at least 8 characters.'; errEl.style.display='block'; return }
+  var btn = document.getElementById('acCreateMemberBtn')
+  btn.disabled=true; btn.textContent='Creating...'
+  try {
+    var params = new URLSearchParams({ action:'create_agent', name, email, password })
+    var res = await fetch(EDGE_URL + '?' + params, { method:'POST', headers: authHeaders() })
+    var data = {}; try { data = await res.json() } catch(_) {}
+    if (!res.ok || data.error) throw new Error(data.error || 'Server error — redeploy the Edge Function.')
+    document.getElementById('acNewName').value = ''
+    document.getElementById('acNewEmail').value = ''
+    document.getElementById('acNewPassword').value = ''
+    msgEl.textContent = 'Member "' + name + '" added successfully.'
+    msgEl.style.display = 'block'
+    await acLoadMembers()
+  } catch(err) {
+    errEl.textContent = err.message; errEl.style.display = 'block'
+  } finally {
+    btn.disabled=false; btn.textContent='Add Member'
+  }
+}
+
+async function acDeleteMember(agentId, name) {
+  if (!confirm('Remove member "' + name + '"? They will no longer be able to log in.')) return
+  var errEl = document.getElementById('acMemberErr')
+  var msgEl = document.getElementById('acMemberMsg')
+  errEl.style.display = 'none'; msgEl.style.display = 'none'
+  try {
+    var params = new URLSearchParams({ action:'delete_agent', agent_id: agentId })
+    var res = await fetch(EDGE_URL + '?' + params, { method:'POST', headers: authHeaders() })
+    var data = await res.json()
+    if (!res.ok || data.error) throw new Error(data.error || 'Failed to remove member.')
+    msgEl.textContent = 'Member "' + name + '" removed.'
+    msgEl.style.display = 'block'
+    await acLoadMembers()
+  } catch(err) {
+    errEl.textContent = err.message; errEl.style.display = 'block'
+  }
+}
+
+/* ---- Backfill ---- */
+async function acLoadBackfillStatus() {
+  var statusEl = document.getElementById('acBackfillStatus')
+  if (!statusEl) return
+  try {
+    var unchecked    = (await sb.from('csat_responses').select('freshdesk_rating_id',{count:'exact',head:true}).eq('ai_response_checked',false)).count
+    var badUnchecked = (await sb.from('csat_responses').select('freshdesk_rating_id',{count:'exact',head:true}).eq('ai_response_checked',false).eq('rating','Bad')).count
+    var aiTotal      = (await sb.from('csat_responses').select('freshdesk_rating_id',{count:'exact',head:true}).eq('ai_response_sent',true)).count
+    statusEl.innerHTML = '<span style="color:var(--text)">Current status:</span> <b>' + aiTotal + '</b> AI responses found &nbsp;|&nbsp; <b>' + badUnchecked + '</b> bad-rated unchecked &nbsp;|&nbsp; <b>' + unchecked + '</b> total unchecked'
+  } catch(_) { statusEl.textContent = 'Click a button below to start backfill.' }
+}
+
+async function acStartBackfill(ratingFilter) {
+  if (_acBackfillRunning) return
+  _acBackfillRunning = true; _acBackfillStop = false
+  var statusEl  = document.getElementById('acBackfillStatus')
+  var progressEl = document.getElementById('acBackfillProgress')
+  var barEl     = document.getElementById('acBackfillBar')
+  var logEl     = document.getElementById('acBackfillLog')
+  var startBtn  = document.getElementById('acBackfillBtn')
+  var allBtn    = document.getElementById('acBackfillAllBtn')
+  var stopBtn   = document.getElementById('acBackfillStopBtn')
+  if (!statusEl) return
+  progressEl.style.display = 'block'; stopBtn.style.display = 'inline-block'
+  startBtn.disabled = true; allBtn.disabled = true; logEl.innerHTML = ''
+  var label = ratingFilter ? ratingFilter + '-rated' : 'all'
+  statusEl.textContent = 'Starting backfill for ' + label + ' tickets...'
+  var totalChecked = 0, totalMarked = 0, call = 0
+  while (!_acBackfillStop) {
+    call++
+    try {
+      var url = EDGE_URL + '?action=backfill_ai_response&limit=25&admin_token=' + EDGE_SECRET + (ratingFilter ? '&rating=' + ratingFilter : '')
+      var res = await fetch(url, { headers: { 'x-admin-token': EDGE_SECRET } })
+      var d   = await res.json()
+      if (!res.ok) { statusEl.textContent = 'Error: ' + (d.error || res.status); break }
+      totalChecked += d.checked || 0; totalMarked += d.marked_ai || 0
+      var pct = d.total_unchecked > 0 ? Math.round(totalChecked / (totalChecked + d.remaining_unchecked) * 100) : 100
+      barEl.style.width = Math.min(pct, 100) + '%'
+      statusEl.innerHTML = 'Checked: <b>' + totalChecked + '</b> &nbsp;|&nbsp; Marked AI: <b>' + totalMarked + '</b> &nbsp;|&nbsp; Remaining: <b>' + (d.remaining_unchecked ?? '?') + '</b>'
+      if (logEl) { var li = document.createElement('div'); li.textContent = 'Batch ' + call + ': checked=' + (d.checked||0) + ' marked=' + (d.marked_ai||0); logEl.appendChild(li); logEl.scrollTop = logEl.scrollHeight }
+      if (!d.remaining_unchecked || d.remaining_unchecked === 0 || !d.checked) break
+      await new Promise(function(r){setTimeout(r,400)})
+    } catch(err) { statusEl.textContent = 'Error: ' + err.message; break }
+  }
+  _acBackfillRunning = false; startBtn.disabled = false; allBtn.disabled = false; stopBtn.style.display = 'none'
+  barEl.style.width = '100%'
+  statusEl.innerHTML += ' &nbsp;<span style="color:var(--good);font-weight:700">✓ Done</span>'
+  acLoadBackfillStatus()
+}
+
+function acStopBackfill() { _acBackfillStop = true }
+
+/* ---- QA Access Filters ---- */
+function acPopulateQaFilters() {
+  var allData = ALL || []
+  // Get unique ticket types and groups from data
+  var types  = [...new Set(allData.map(function(r){return r.ticket_type}).filter(Boolean))].sort()
+  var groups = [...new Set(allData.map(function(r){return r.group_name}).filter(Boolean))].sort()
+  var saved = loadQaAdminFilters()
+
+  function buildChecklist(containerId, values, savedValues, field) {
+    var el = document.getElementById(containerId)
+    if (!el) return
+    if (!values.length) { el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px">No values found in data.</div>'; return }
+    el.innerHTML = values.map(function(v) {
+      var checked = savedValues.indexOf(v) !== -1 ? ' checked' : ''
+      return '<label class="ac-check-item">'
+        + '<input type="checkbox" value="' + esc(v) + '" data-filter="' + field + '"' + checked + ' onchange="acUpdateFilterNote(\'' + field + '\')" />'
+        + '<span class="ac-check-item-label">' + esc(v) + '</span>'
+        + '</label>'
+    }).join('')
+    acUpdateFilterNote(field)
+  }
+
+  buildChecklist('acFilterTypeList',  types,  saved.ticket_types || [], 'type')
+  buildChecklist('acFilterGroupList', groups, saved.groups || [],       'group')
+}
+
+function acUpdateFilterNote(field) {
+  var listId  = field === 'type'  ? 'acFilterTypeList'  : 'acFilterGroupList'
+  var noteId  = field === 'type'  ? 'acFilterTypeNote'  : 'acFilterGroupNote'
+  var noteEl  = document.getElementById(noteId)
+  var listEl  = document.getElementById(listId)
+  if (!noteEl || !listEl) return
+  var checked = listEl.querySelectorAll('input[type="checkbox"]:checked').length
+  var total   = listEl.querySelectorAll('input[type="checkbox"]').length
+  noteEl.textContent = checked === 0
+    ? '0 selected (showing all ' + total + ')'
+    : checked + ' of ' + total + ' selected'
+}
+
+function acGetCheckedValues(field) {
+  var listId = field === 'type' ? 'acFilterTypeList' : 'acFilterGroupList'
+  var listEl = document.getElementById(listId)
+  if (!listEl) return []
+  return Array.from(listEl.querySelectorAll('input[type="checkbox"]:checked')).map(function(cb) { return cb.value })
+}
+
+function acClearFilter(field) {
+  var listId = field === 'type' ? 'acFilterTypeList' : 'acFilterGroupList'
+  var listEl = document.getElementById(listId)
+  if (!listEl) return
+  listEl.querySelectorAll('input[type="checkbox"]').forEach(function(cb) { cb.checked = false })
+  acUpdateFilterNote(field)
+}
+
+function acClearAllFilters() {
+  acClearFilter('type'); acClearFilter('group')
+}
+
+function acSaveQaFilters() {
+  var types  = acGetCheckedValues('type')
+  var groups = acGetCheckedValues('group')
+  saveQaAdminFilters({ ticket_types: types, groups: groups })
+  updateQaAdminFilterBadge()
+  var msg = document.getElementById('acFilterSavedMsg')
+  if (msg) { msg.classList.add('show'); setTimeout(function(){ msg.classList.remove('show') }, 2000) }
+}
+
+/* ---- Inline Prompt Config ---- */
+function acBuildPromptSections() {
+  var container = document.getElementById('acPromptSections')
+  if (!container) return
+  var sections = loadPromptSections()
+  container.innerHTML = ''
+  sections.forEach(function(section) {
+    var div = document.createElement('div')
+    div.className = 'ac-psec'
+    div.id = 'ac-psec-' + section.id
+    var condHtml = section.conditional
+      ? '<span class="ac-psec-cond">⚠ ' + section.conditional + '</span>'
+      : ''
+    div.innerHTML = '<div class="ac-psec-head" onclick="acTogglePsec(\'' + section.id + '\')">'
+      + '<div class="ac-psec-icon">' + section.icon + '</div>'
+      + '<div class="ac-psec-meta">'
+      + '<div class="ac-psec-label">' + esc(section.label) + condHtml + '</div>'
+      + '<div class="ac-psec-hint">' + esc(section.hint) + '</div>'
+      + '</div>'
+      + '<span class="ac-psec-chevron">▼</span>'
+      + '</div>'
+      + '<div class="ac-psec-body">'
+      + '<div class="ac-psec-footer"><button class="ac-psec-reset" onclick="acResetSection(\'' + section.id + '\')">↺ Reset to default</button></div>'
+      + '</div>'
+    var ta = document.createElement('textarea')
+    ta.className = 'ac-psec-textarea'
+    ta.id = 'ac-ptxt-' + section.id
+    ta.rows = 6
+    ta.value = section.text
+    var body   = div.querySelector('.ac-psec-body')
+    var footer = body.querySelector('.ac-psec-footer')
+    body.insertBefore(ta, footer)
+    container.appendChild(div)
+  })
+}
+
+function acTogglePsec(id) {
+  var el = document.getElementById('ac-psec-' + id)
+  if (!el) return
+  var isOpen = el.classList.contains('open')
+  document.querySelectorAll('.ac-psec').forEach(function(s) { s.classList.remove('open') })
+  if (!isOpen) el.classList.add('open')
+}
+
+function acResetSection(id) {
+  var def = DEFAULT_PROMPT_SECTIONS.find(function(s) { return s.id === id })
+  if (!def) return
+  var ta = document.getElementById('ac-ptxt-' + id)
+  if (ta) ta.value = def.text
+  var sections = loadPromptSections()
+  var s = sections.find(function(s) { return s.id === id })
+  if (s) s.text = def.text
+}
+
+function acResetAllSections() {
+  if (!confirm('Reset all sections to their default instructions?')) return
+  promptSections = DEFAULT_PROMPT_SECTIONS.map(function(s) { return Object.assign({}, s) })
+  for (var i = 0; i < promptSections.length; i++) {
+    var ta = document.getElementById('ac-ptxt-' + promptSections[i].id)
+    if (ta) ta.value = promptSections[i].text
+  }
+}
+
+function acSavePromptConfig() {
+  var sections = loadPromptSections()
+  for (var i = 0; i < sections.length; i++) {
+    var ta = document.getElementById('ac-ptxt-' + sections[i].id)
+    if (ta) sections[i].text = ta.value
+  }
+  savePromptSectionsToStorage()
+  var msg = document.getElementById('acPromptSavedMsg')
+  if (msg) { msg.classList.add('show'); setTimeout(function(){ msg.classList.remove('show') }, 2000) }
 }
 
 /* ====================================================================
@@ -3003,10 +3770,11 @@ function savePromptConfig() {
 }
 
 function togglePromptPreview() {
-  // Read current textarea values into sections first
+  // Read current textarea values into sections — check both pconfig modal and admin center textareas
   var sections = loadPromptSections()
   for (var i = 0; i < sections.length; i++) {
     var ta = document.getElementById('ptxt-' + sections[i].id)
+       || document.getElementById('ac-ptxt-' + sections[i].id)
     if (ta) sections[i].text = ta.value
   }
   var preview = buildAuditPrompt('{{ticket_id}}', '{{csat_rating}}', '{{ticket_type}}')
@@ -3237,7 +4005,10 @@ function renderQaResult(ticketId, row, result) {
       ${toolsHtml}
       <div class="qa-footer">
         <span>${ts}${duration ? ` &nbsp;·&nbsp; ${duration}` : ''}</span>
-        <button class="btn-qa-reaudit" onclick="rerunQaAudit(${ticketId})">Re-run Audit</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn-post-fd" id="qapostfd-${ticketId}" onclick="postQaToFreshdesk(${ticketId})">&#128196; Post to Freshdesk</button>
+          <button class="btn-qa-reaudit" onclick="rerunQaAudit(${ticketId})">Re-run Audit</button>
+        </div>
       </div>
     </div>`
 }
